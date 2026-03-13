@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"E:/project_after_1_ dec_2025/Salesmensapi\" && npm init -y)",
+      "Bash(cd \"E:/project_after_1_ dec_2025/Salesmensapi\" && npm install express mongoose dotenv cors)",
+      "Bash(cd \"E:/project_after_1_ dec_2025/Salesmensapi\" && npm install -D nodemon)",
+      "Bash(cd \"E:/project_after_1_ dec_2025/Salesmensapi\" && mkdir -p src/config src/models src/routes src/controllers src/middlewares)",
+      "Bash(npm install:*)",
+      "Bash(node server.js)"
+    ]
+  }
+}
