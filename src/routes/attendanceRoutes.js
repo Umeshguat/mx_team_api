@@ -6,7 +6,7 @@ const {
   getAttendanceHistory,
 } = require("../controllers/attendanceController");
 const { protect } = require("../middleware/authMiddleware");
-const upload = require("../middleware/uploadMiddleware");
+const { upload, handleMulterError } = require("../middleware/uploadMiddleware");
 
 const router = express.Router();
 
@@ -23,6 +23,7 @@ router.post(
     { name: "food_image", maxCount: 1 },
     { name: "other_image", maxCount: 1 },
   ]),
+  handleMulterError,
   checkIn
 );
 
@@ -35,6 +36,7 @@ router.post(
     { name: "food_image", maxCount: 1 },
     { name: "other_image", maxCount: 1 },
   ]),
+  handleMulterError,
   checkOut
 );
 
