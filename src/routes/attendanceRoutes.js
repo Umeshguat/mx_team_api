@@ -26,9 +26,9 @@ router.post(
   checkIn
 );
 
-// Check-out with image uploads
-router.put(
-  "/check-out/:id",
+// Check-out with image uploads (auto-finds today's active check-in)
+router.post(
+  "/check-out",
   upload.fields([
     { name: "check_out_image", maxCount: 1 },
     { name: "stay_image", maxCount: 1 },

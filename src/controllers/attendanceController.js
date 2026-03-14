@@ -63,21 +63,27 @@ const checkIn = async (req, res) => {
   }
 };
 
-// @desc    Check out attendance
-// @route   PUT /api/attendance/check-out/:id
+// @desc    Check out attendance (auto-finds today's active check-in)
+// @route   POST /api/attendance/check-out
 const checkOut = async (req, res) => {
   try {
     const userId = req.user._id;
 
+    // Find today's active check-in for this user
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
     const attendance = await Attendance.findOne({
-      _id: req.params.id,
       user_id: userId,
       status: "checked_in",
+      check_in_time: { $gte: today, $lt: tomorrow },
     });
 
     if (!attendance) {
       return res.status(404).json({
-        message: "No active check-in found",
+        message: "No active check-in found for today",
       });
     }
 
