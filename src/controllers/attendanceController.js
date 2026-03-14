@@ -137,17 +137,25 @@ const getTodayAttendance = async (req, res) => {
       .populate("user_id", "full_name")
       .sort({ check_in_time: -1 });
 
-    const result = attendance.map((item) => ({
-      _id: item._id,
-      full_name: item.user_id?.full_name || null,
-      headquarter_name: item.headquarter_name,
-      working_town: item.working_town,
-      route: item.route,
-      date: item.check_in_time,
-      start_time: item.check_in_time,
-      end_time: item.check_out_time || null,
-      total_km: item.check_out_km ? item.check_out_km - item.check_in_km : 0,
-    }));
+    const result = attendance.map((item) => {
+      const startTime = item.check_in_time
+        ? item.check_in_time.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })
+        : null;
+      const endTime = item.check_out_time
+        ? item.check_out_time.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })
+        : null;
+      return {
+        _id: item._id,
+        full_name: item.user_id?.full_name || null,
+        headquarter_name: item.headquarter_name,
+        working_town: item.working_town,
+        route: item.route,
+        date: item.check_in_time,
+        start_time: startTime,
+        end_time: endTime,
+        total_km: item.check_out_km ? item.check_out_km - item.check_in_km : 0,
+      };
+    });
 
     res.json({ status: 200, attendance: result });
   } catch (error) {
@@ -166,17 +174,25 @@ const getAttendanceHistory = async (req, res) => {
       .populate("user_id", "full_name")
       .sort({ check_in_time: -1 });
 
-    const result = attendance.map((item) => ({
-      _id: item._id,
-      full_name: item.user_id?.full_name || null,
-      headquarter_name: item.headquarter_name,
-      working_town: item.working_town,
-      route: item.route,
-      date: item.check_in_time,
-      start_time: item.check_in_time,
-      end_time: item.check_out_time || null,
-      total_km: item.check_out_km ? item.check_out_km - item.check_in_km : 0,
-    }));
+    const result = attendance.map((item) => {
+      const startTime = item.check_in_time
+        ? item.check_in_time.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })
+        : null;
+      const endTime = item.check_out_time
+        ? item.check_out_time.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })
+        : null;
+      return {
+        _id: item._id,
+        full_name: item.user_id?.full_name || null,
+        headquarter_name: item.headquarter_name,
+        working_town: item.working_town,
+        route: item.route,
+        date: item.check_in_time,
+        start_time: startTime,
+        end_time: endTime,
+        total_km: item.check_out_km ? item.check_out_km - item.check_in_km : 0,
+      };
+    });
 
     res.json({ status: 200, attendance: result });
   } catch (error) {
