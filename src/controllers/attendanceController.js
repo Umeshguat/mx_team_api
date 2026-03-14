@@ -133,7 +133,7 @@ const getTodayAttendance = async (req, res) => {
       user_id: req.user._id,
       check_in_time: { $gte: today, $lt: tomorrow },
     })
-      .select("_id headquarter_name working_town route check_in_time check_in_km check_out_km user_id")
+      .select("_id headquarter_name working_town route check_in_time check_out_time check_in_km check_out_km user_id")
       .populate("user_id", "full_name")
       .sort({ check_in_time: -1 });
 
@@ -144,6 +144,8 @@ const getTodayAttendance = async (req, res) => {
       working_town: item.working_town,
       route: item.route,
       date: item.check_in_time,
+      start_time: item.check_in_time,
+      end_time: item.check_out_time || null,
       total_km: item.check_out_km ? item.check_out_km - item.check_in_km : 0,
     }));
 
@@ -160,7 +162,7 @@ const getAttendanceHistory = async (req, res) => {
     const attendance = await Attendance.find({
       user_id: req.user._id,
     })
-      .select("_id headquarter_name working_town route check_in_time check_in_km check_out_km user_id")
+      .select("_id headquarter_name working_town route check_in_time check_out_time check_in_km check_out_km user_id")
       .populate("user_id", "full_name")
       .sort({ check_in_time: -1 });
 
@@ -171,6 +173,8 @@ const getAttendanceHistory = async (req, res) => {
       working_town: item.working_town,
       route: item.route,
       date: item.check_in_time,
+      start_time: item.check_in_time,
+      end_time: item.check_out_time || null,
       total_km: item.check_out_km ? item.check_out_km - item.check_in_km : 0,
     }));
 
