@@ -132,11 +132,24 @@ const getTodayAttendance = async (req, res) => {
     const attendance = await Attendance.find({
       user_id: req.user._id,
       check_in_time: { $gte: today, $lt: tomorrow },
-    }).sort({ check_in_time: -1 });
+    })
+      .select("_id headquarter_name working_town route check_in_time check_in_km check_out_km user_id")
+      .populate("user_id", "full_name")
+      .sort({ check_in_time: -1 });
 
-    res.json(attendance);
+    const result = attendance.map((item) => ({
+      _id: item._id,
+      full_name: item.user_id?.full_name || null,
+      headquarter_name: item.headquarter_name,
+      working_town: item.working_town,
+      route: item.route,
+      date: item.check_in_time,
+      total_km: item.check_out_km ? item.check_out_km - item.check_in_km : 0,
+    }));
+
+    res.json({ status: 200, attendance: result });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: 500, message: error.message });
   }
 };
 
@@ -146,11 +159,24 @@ const getAttendanceHistory = async (req, res) => {
   try {
     const attendance = await Attendance.find({
       user_id: req.user._id,
-    }).sort({ check_in_time: -1 });
+    })
+      .select("_id headquarter_name working_town route check_in_time check_in_km check_out_km user_id")
+      .populate("user_id", "full_name")
+      .sort({ check_in_time: -1 });
 
-    res.json(attendance);
+    const result = attendance.map((item) => ({
+      _id: item._id,
+      full_name: item.user_id?.full_name || null,
+      headquarter_name: item.headquarter_name,
+      working_town: item.working_town,
+      route: item.route,
+      date: item.check_in_time,
+      total_km: item.check_out_km ? item.check_out_km - item.check_in_km : 0,
+    }));
+
+    res.json({ status: 200, attendance: result });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: 500, message: error.message });
   }
 };
 
