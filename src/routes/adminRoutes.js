@@ -15,9 +15,13 @@ const {
   updateDesignation,
   deleteDesignation,
 } = require("../controllers/designationController");
+const { getDashboard } = require("../controllers/dashboardController");
 
 // All admin routes require authentication + admin role
 router.use(protect, isAdmin);
+
+// Dashboard
+router.get("/dashboard", getDashboard);
 
 // Role routes
 router.route("/roles").get(getRoles).post(createRole);
