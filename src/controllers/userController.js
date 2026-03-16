@@ -1,5 +1,7 @@
 const User = require("../models/userModel");
 const UserDailyAllowance = require("../models/userAllowanceDailyReceiveModel");
+const Attendance = require("../models/attendanceModel");
+const VendorVisit = require("../models/vendorVisitModel");
 const jwt = require("jsonwebtoken");
 
 // Generate JWT token
@@ -161,4 +163,86 @@ const getDailyAllowanceByUser = async (req, res) => {
   }
 };
 
-module.exports = { register, login, updateProfile, getDailyAllowanceByUser };
+// @desc    Get user details (profile + today's check-in, vendor visits, allowance)
+// @route   GET /api/users/details
+const getUserDetails = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await User.findById(userId)
+      .select("full_name email headquarter_name phone_number")
+
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not found" });
+    }
+
+    // Today's date range
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Today's attendance
+    const attendance = await Attendance.findOne({
+      user_id: userId,
+      check_in_time: { $gte: today, $lt: tomorrow },
+    }).sort({ check_in_time: -1 });
+
+    const check_in_time = attendance && attendance.check_in_time
+      ? attendance.check_in_time.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })
+      : "Not checked in";
+
+    // Today's vendor visits count
+    const vendor_visits = await VendorVisit.countDocuments({
+      user_id: userId,
+      visit_date: { $gte: today, $lt: tomorrow },
+    });
+
+    // Today's total allowance
+    const allowanceResult = await UserDailyAllowance.aggregate([
+      {
+        $match: {
+          user_id: userId,
+          date: { $gte: today, $lt: tomorrow },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total_km_price: { $sum: "$total_km_price" },
+          total_food: { $sum: "$food" },
+          total_stay: { $sum: "$stay" },
+          total_other: { $sum: "$other" },
+          total_daily: { $sum: "$daily" },
+        },
+      },
+    ]);
+
+    const total_allowance =
+      allowanceResult.length > 0
+        ? allowanceResult[0].total_km_price +
+          allowanceResult[0].total_food +
+          allowanceResult[0].total_stay +
+          allowanceResult[0].total_other +
+          allowanceResult[0].total_daily
+        : 0;
+
+    res.status(200).json({
+      status: 200,
+      message: "User details fetched successfully",
+      data: {
+        full_name: user.full_name,
+        email: user.email,
+        headquarter_name: user.headquarter_name,
+        phone_number: user.phone_number,
+        check_in_time,
+        vendor_visits,
+        total_allowance,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
+module.exports = { register, login, updateProfile, getDailyAllowanceByUser, getUserDetails };
