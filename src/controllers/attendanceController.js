@@ -93,7 +93,7 @@ const checkOut = async (req, res) => {
       });
     }
 
-    const { check_out_km } = req.body;
+    const { total_km } = req.body;
     const files = req.files || {};
 
     if (!files.check_out_image) {
@@ -103,7 +103,7 @@ const checkOut = async (req, res) => {
     }
 
     attendance.check_out_time = new Date();
-    attendance.check_out_km = check_out_km;
+    attendance.check_out_km = total_km;
     attendance.check_out_image = files.check_out_image[0].path;
     attendance.status = "checked_out";
 
