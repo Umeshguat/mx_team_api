@@ -1,6 +1,7 @@
 const User = require("../models/userModel");
 const Attendance = require("../models/attendanceModel");
 const VendorVisit = require("../models/vendorVisitModel");
+const UserDailyAllowance = require("../models/userAllowanceDailyReceiveModel");
 
 // Helper: get today's date range
 const getTodayRange = () => {
@@ -95,27 +96,31 @@ const getDashboard = async (req, res) => {
         visit_date: { $gte: today, $lt: tomorrow },
       });
 
-      const allowanceResult = await Attendance.aggregate([
+      const adminAllowanceResult = await UserDailyAllowance.aggregate([
         {
           $match: {
-            check_in_time: { $gte: today, $lt: tomorrow },
+            date: { $gte: today, $lt: tomorrow },
           },
         },
         {
           $group: {
             _id: null,
-            total_stay: { $sum: "$stay_amount" },
-            total_food: { $sum: "$food_amount" },
-            total_other: { $sum: "$other_amount" },
+            total_km_price: { $sum: "$total_km_price" },
+            total_food: { $sum: "$food" },
+            total_stay: { $sum: "$stay" },
+            total_other: { $sum: "$other" },
+            total_daily: { $sum: "$daily" },
           },
         },
       ]);
 
       const totalDailyAllowance =
-        allowanceResult.length > 0
-          ? allowanceResult[0].total_stay +
-            allowanceResult[0].total_food +
-            allowanceResult[0].total_other
+        adminAllowanceResult.length > 0
+          ? adminAllowanceResult[0].total_km_price +
+            adminAllowanceResult[0].total_food +
+            adminAllowanceResult[0].total_stay +
+            adminAllowanceResult[0].total_other +
+            adminAllowanceResult[0].total_daily
           : 0;
 
       // All employees' today check-in data
@@ -149,28 +154,32 @@ const getDashboard = async (req, res) => {
       visit_date: { $gte: today, $lt: tomorrow },
     });
 
-    const allowanceResult = await Attendance.aggregate([
+    const empAllowanceResult = await UserDailyAllowance.aggregate([
       {
         $match: {
           user_id: userId,
-          check_in_time: { $gte: today, $lt: tomorrow },
+          date: { $gte: today, $lt: tomorrow },
         },
       },
       {
         $group: {
           _id: null,
-          total_stay: { $sum: "$stay_amount" },
-          total_food: { $sum: "$food_amount" },
-          total_other: { $sum: "$other_amount" },
+          total_km_price: { $sum: "$total_km_price" },
+          total_food: { $sum: "$food" },
+          total_stay: { $sum: "$stay" },
+          total_other: { $sum: "$other" },
+          total_daily: { $sum: "$daily" },
         },
       },
     ]);
 
     const totalDailyAllowance =
-      allowanceResult.length > 0
-        ? allowanceResult[0].total_stay +
-          allowanceResult[0].total_food +
-          allowanceResult[0].total_other
+      empAllowanceResult.length > 0
+        ? empAllowanceResult[0].total_km_price +
+          empAllowanceResult[0].total_food +
+          empAllowanceResult[0].total_stay +
+          empAllowanceResult[0].total_other +
+          empAllowanceResult[0].total_daily
         : 0;
 
     // Last 7 days history

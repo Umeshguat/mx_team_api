@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const UserDailyAllowance = require("../models/userAllowanceDailyReceiveModel");
 const jwt = require("jsonwebtoken");
 
 // Generate JWT token
@@ -125,4 +126,39 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = { register, login, updateProfile };
+// @desc    Get daily allowances by logged-in user
+// @route   GET /api/users/daily-allowance
+const getDailyAllowanceByUser = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const dailyAllowances = await UserDailyAllowance.find({ user_id: userId })
+      .populate("user_id", "full_name")
+      .sort({ date: -1 });
+
+    // Calculate total approved and pending amounts
+    let total_approved_amount = 0;
+    let total_pending_amount = 0;
+
+    dailyAllowances.forEach((item) => {
+      const amount = item.total_km_price + item.food + item.stay + item.other + item.daily;
+      if (item.status === "approved") {
+        total_approved_amount += amount;
+      } else if (item.status === "pending") {
+        total_pending_amount += amount;
+      }
+    });
+
+    res.status(200).json({
+      status: 200,
+      message: "Daily allowances fetched successfully",
+      total_approved_amount,
+      total_pending_amount,
+      dailyAllowances,
+    });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
+module.exports = { register, login, updateProfile, getDailyAllowanceByUser };
