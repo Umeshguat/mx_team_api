@@ -3,6 +3,7 @@ const VendorVisit = require("../models/vendorVisitModel");
 // @desc    Add vendor visit
 // @route   POST /api/vendor-visits
 const addVendorVisit = async (req, res) => {
+  console.log("addVendorVisit req.body:", req.body);
   try {
     const files = req.files || {};
 
