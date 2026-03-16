@@ -19,12 +19,8 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedExtensions = /jpeg|jpg|png|webp/;
-  const allowedMimeTypes = /image\/(jpeg|jpg|png|webp)/;
-  const extname = allowedExtensions.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedMimeTypes.test(file.mimetype);
-
-  if (extname || mimetype) {
+  // Accept any file that starts with image/ mimetype
+  if (file.mimetype.startsWith("image/")) {
     cb(null, true);
   } else {
     cb(new multer.MulterError("LIMIT_UNEXPECTED_FILE", file.fieldname));
