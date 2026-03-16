@@ -3,6 +3,8 @@ const Attendance = require("../models/attendanceModel");
 // @desc    Check in attendance
 // @route   POST /api/attendance/check-in
 const checkIn = async (req, res) => {
+  console.log("checkIn req.body:", req.body);
+  console.log("checkIn req.files:", req.files);
   try {
     const userId = req.user._id;
 
