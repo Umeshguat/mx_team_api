@@ -154,34 +154,6 @@ const getDashboard = async (req, res) => {
       visit_date: { $gte: today, $lt: tomorrow },
     });
 
-    const empAllowanceResult = await UserDailyAllowance.aggregate([
-      {
-        $match: {
-          user_id: userId,
-          date: { $gte: today, $lt: tomorrow },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total_km_price: { $sum: "$total_km_price" },
-          total_food: { $sum: "$food" },
-          total_stay: { $sum: "$stay" },
-          total_other: { $sum: "$other" },
-          total_daily: { $sum: "$daily" },
-        },
-      },
-    ]);
-
-    const totalDailyAllowance =
-      empAllowanceResult.length > 0
-        ? empAllowanceResult[0].total_km_price +
-          empAllowanceResult[0].total_food +
-          empAllowanceResult[0].total_stay +
-          empAllowanceResult[0].total_other +
-          empAllowanceResult[0].total_daily
-        : 0;
-
     // Last 7 days history
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -204,7 +176,6 @@ const getDashboard = async (req, res) => {
         status: myStatus,
         my_attendance: myAttendance,
         vendor_visits_today: vendorVisitsToday,
-        total_daily_allowance: totalDailyAllowance,
         recent_history: recentHistory,
       },
     });
