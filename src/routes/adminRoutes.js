@@ -15,6 +15,14 @@ const {
   updateDesignation,
   deleteDesignation,
 } = require("../controllers/designationController");
+const {
+  createAllowance,
+  getAllowances,
+  getAllowanceById,
+  updateAllowance,
+  deleteAllowance,
+} = require("../controllers/allowanceController");
+
 // All admin routes require authentication + admin role
 router.use(protect, isAdmin);
 
@@ -29,5 +37,13 @@ router
   .get(getDesignationById)
   .put(updateDesignation)
   .delete(deleteDesignation);
+
+// Allowance routes
+router.route("/allowances").get(getAllowances).post(createAllowance);
+router
+  .route("/allowances/:id")
+  .get(getAllowanceById)
+  .put(updateAllowance)
+  .delete(deleteAllowance);
 
 module.exports = router;
