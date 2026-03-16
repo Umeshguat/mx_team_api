@@ -1,4 +1,7 @@
 const Attendance = require("../models/attendanceModel");
+const User = require("../models/userModel");
+const AllowanceMaster = require("../models/allowanceMasterModel");
+const UserDailyAllowance = require("../models/userAllowanceDailyReceiveModel");
 
 // @desc    Check in attendance
 // @route   POST /api/attendance/check-in
@@ -71,8 +74,7 @@ const checkIn = async (req, res) => {
 // @route   POST /api/attendance/check-out
 const checkOut = async (req, res) => {
   try {
-    console.log("checkIn req.body:", req.body);
-  console.log("checkIn req.files:", req.files);
+
     const userId = req.user._id;
 
     // Find today's active check-in for this user
@@ -117,9 +119,34 @@ const checkOut = async (req, res) => {
 
     const updatedAttendance = await attendance.save();
 
+    // Calculate total KM
+    const total_km_value = attendance.check_out_km - attendance.check_in_km;
+
+    // Get user's designation and fetch allowance master
+    const user = await User.findById(userId);
+    const allowanceMaster = await AllowanceMaster.findOne({
+      designation_id: user.designation_id,
+    });
+
+    const per_km = allowanceMaster ? allowanceMaster.per_km : 0;
+    const total_km_price = total_km_value * per_km;
+
+    // Create UserDailyAllowance record
+    const dailyAllowance = await UserDailyAllowance.create({
+      user_id: userId,
+      total_km: total_km_value,
+      total_km_price,
+      food: attendance.food_amount || 0,
+      stay: attendance.stay_amount || 0,
+      other: attendance.other_amount || 0,
+      daily: allowanceMaster ? allowanceMaster.daily_allowance : 0,
+      date: new Date(),
+    });
+
     res.json({
       message: "Check-out successful",
       attendance: updatedAttendance,
+      dailyAllowance,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
