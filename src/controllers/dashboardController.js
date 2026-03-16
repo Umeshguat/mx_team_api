@@ -74,6 +74,11 @@ const getDashboard = async (req, res) => {
       ? formatAttendanceRecord(myAttendanceDoc)
       : null;
 
+    // true if checked in today but not yet checked out
+    const check_in =
+      myAttendanceDoc !== null &&
+      myAttendanceDoc.status === "checked_in";
+
     const myStatus = myAttendance ? myAttendance.status : "Not Checked In";
 
     if (isAdmin) {
@@ -126,6 +131,7 @@ const getDashboard = async (req, res) => {
         status: 200,
         role: "Admin",
         data: {
+          check_in,
           total_employees: totalEmployees,
           present_today: presentCount,
           absent_leave: absentCount,
@@ -185,6 +191,7 @@ const getDashboard = async (req, res) => {
       status: 200,
       role: "Employee",
       data: {
+        check_in,
         status: myStatus,
         my_attendance: myAttendance,
         vendor_visits_today: vendorVisitsToday,
