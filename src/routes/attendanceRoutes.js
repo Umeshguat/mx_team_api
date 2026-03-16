@@ -18,6 +18,7 @@ router.post(
   "/check-in",
   (req, res, next) => {
     console.log("Before multer - req.body:", req.body);
+    console.log("Before multer - req.files:", req.files);
     console.log("Before multer - req.headers content-type:", req.headers["content-type"]);
     next();
   },
