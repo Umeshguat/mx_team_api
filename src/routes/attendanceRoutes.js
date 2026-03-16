@@ -31,6 +31,7 @@ router.post(
   "/check-out",
   uploadFields([
     { name: "check_out_image", maxCount: 1 },
+    { name: "km_image", maxCount: 1 },
     { name: "selfie_image", maxCount: 1 },
     { name: "stay_image", maxCount: 1 },
     { name: "food_image", maxCount: 1 },
