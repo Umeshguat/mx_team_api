@@ -34,7 +34,8 @@ const checkIn = async (req, res) => {
     // Build image paths from uploaded files
     const files = req.files || {};
 
-    if (!files.check_in_image || !files.selfie_image) {
+    const kmImage = files.check_in_image || files.km_image;
+    if (!kmImage || !files.selfie_image) {
       return res.status(400).json({
         message: "Check-in KM image and selfie image are required",
       });
@@ -44,7 +45,7 @@ const checkIn = async (req, res) => {
       user_id: userId,
       check_in_time: new Date(),
       check_in_km: check_in_km || total_km,
-      check_in_image: files.check_in_image[0].path,
+      check_in_image: kmImage[0].path,
       selfie_image: files.selfie_image[0].path,
       headquarter_name,
       working_town,
