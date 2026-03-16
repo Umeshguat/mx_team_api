@@ -8,7 +8,7 @@ const createAllowance = async (req, res) => {
 
     const exists = await AllowanceMaster.findOne({ designation_id });
     if (exists) {
-      return res.status(400).json({ message: "Allowance for this designation already exists" });
+      return res.status(400).json({ status: 400, message: "Allowance for this designation already exists" });
     }
 
     const allowance = await AllowanceMaster.create({
@@ -20,9 +20,13 @@ const createAllowance = async (req, res) => {
       other_expenses,
     });
 
-    res.status(201).json(allowance);
+    res.status(201).json({
+      status: 201,        
+      message: "Allowance created successfully",
+      allowance,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: 500, message: error.message });
   }
 };
 
@@ -33,9 +37,13 @@ const getAllowances = async (req, res) => {
     const allowances = await AllowanceMaster.find()
       .populate("designation_id", "designation_name")
       .sort({ createdAt: -1 });
-    res.json(allowances);
+    res.status(200).json({
+      status: 200,
+      message: "Allowances fetched successfully",
+      allowances,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: 500, message: error.message });
   }
 };
 
@@ -46,11 +54,15 @@ const getAllowanceById = async (req, res) => {
     const allowance = await AllowanceMaster.findById(req.params.id)
       .populate("designation_id", "designation_name");
     if (!allowance) {
-      return res.status(404).json({ message: "Allowance not found" });
+      return res.status(404).json({ status: 404, message: "Allowance not found" });
     }
-    res.json(allowance);
+    res.status(200).json({
+      status: 200,
+      message: "Allowance fetched successfully",
+      allowance,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: 500, message: error.message });
   }
 };
 
@@ -60,7 +72,7 @@ const updateAllowance = async (req, res) => {
   try {
     const allowance = await AllowanceMaster.findById(req.params.id);
     if (!allowance) {
-      return res.status(404).json({ message: "Allowance not found" });
+      return res.status(404).json({ status: 404, message: "Allowance not found" });
     }
 
     allowance.designation_id = req.body.designation_id ?? allowance.designation_id;
@@ -72,9 +84,13 @@ const updateAllowance = async (req, res) => {
     allowance.status = req.body.status ?? allowance.status;
 
     const updated = await allowance.save();
-    res.json(updated);
+    res.status(200).json({
+      status: 200,
+      message: "Allowance updated successfully",
+      allowance: updated,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: 500, message: error.message });
   }
 };
 
@@ -84,13 +100,16 @@ const deleteAllowance = async (req, res) => {
   try {
     const allowance = await AllowanceMaster.findById(req.params.id);
     if (!allowance) {
-      return res.status(404).json({ message: "Allowance not found" });
+      return res.status(404).json({ status: 404, message: "Allowance not found" });
     }
 
     await allowance.deleteOne();
-    res.json({ message: "Allowance deleted successfully" });
+    res.status(200).json({
+      status: 200,
+      message: "Allowance deleted successfully",
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: 500, message: error.message });
   }
 };
 
