@@ -22,6 +22,7 @@ const checkIn = async (req, res) => {
 
     const {
       check_in_km,
+      total_km,
       headquarter_name,
       working_town,
       route,
@@ -42,7 +43,7 @@ const checkIn = async (req, res) => {
     const attendance = await Attendance.create({
       user_id: userId,
       check_in_time: new Date(),
-      check_in_km,
+      check_in_km: check_in_km || total_km,
       check_in_image: files.check_in_image[0].path,
       selfie_image: files.selfie_image[0].path,
       headquarter_name,
