@@ -16,6 +16,11 @@ router.use(protect);
 // Check-in with image uploads
 router.post(
   "/check-in",
+  (req, res, next) => {
+    console.log("Before multer - req.body:", req.body);
+    console.log("Before multer - req.headers content-type:", req.headers["content-type"]);
+    next();
+  },
   upload.fields([
     { name: "check_in_image", maxCount: 1 },
     { name: "selfie_image", maxCount: 1 },
