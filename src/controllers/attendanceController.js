@@ -70,6 +70,8 @@ const checkIn = async (req, res) => {
 // @route   POST /api/attendance/check-out
 const checkOut = async (req, res) => {
   try {
+    console.log("checkIn req.body:", req.body);
+  console.log("checkIn req.files:", req.files);
     const userId = req.user._id;
 
     // Find today's active check-in for this user
