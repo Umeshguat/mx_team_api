@@ -6,7 +6,9 @@
       "Bash(cd \"E:/project_after_1_ dec_2025/Salesmensapi\" && npm install -D nodemon)",
       "Bash(cd \"E:/project_after_1_ dec_2025/Salesmensapi\" && mkdir -p src/config src/models src/routes src/controllers src/middlewares)",
       "Bash(npm install:*)",
-      "Bash(node server.js)"
+      "Bash(node server.js)",
+      "Bash(node -e \"const multer = require\\(''multer''\\); console.log\\(''multer version:'', require\\(''multer/package.json''\\).version\\); console.log\\(''MulterError:'', typeof multer.MulterError\\); console.log\\(''diskStorage:'', typeof multer.diskStorage\\)\")",
+      "Bash(node -e \":*)"
     ]
   }
 }

@@ -7,7 +7,7 @@ const {
   getAllVendorVisits,
 } = require("../controllers/vendorVisitController");
 const { protect } = require("../middleware/authMiddleware");
-const { upload, handleMulterError } = require("../middleware/uploadMiddleware");
+const { uploadFields } = require("../middleware/uploadMiddleware");
 
 const router = express.Router();
 
@@ -17,16 +17,14 @@ router.use(protect);
 // Add vendor visit
 router.post(
   "/",
-  upload.fields([{ name: "selfie_with_vendor", maxCount: 1 }]),
-  handleMulterError,
+  uploadFields([{ name: "selfie_with_vendor", maxCount: 1 }]),
   addVendorVisit
 );
 
 // Update vendor visit (id sent in body)
 router.post(
   "/update",
-  upload.fields([{ name: "selfie_with_vendor", maxCount: 1 }]),
-  handleMulterError,
+  uploadFields([{ name: "selfie_with_vendor", maxCount: 1 }]),
   updateVendorVisit
 );
 
