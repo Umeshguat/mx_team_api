@@ -38,6 +38,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Password is required"],
     },
+    otp: {
+      type: String,
+      default: null,
+    },
+    otp_expires: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

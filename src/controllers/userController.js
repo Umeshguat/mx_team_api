@@ -3,6 +3,7 @@ const UserDailyAllowance = require("../models/userAllowanceDailyReceiveModel");
 const Attendance = require("../models/attendanceModel");
 const VendorVisit = require("../models/vendorVisitModel");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -245,4 +246,114 @@ const getUserDetails = async (req, res) => {
   }
 };
 
-module.exports = { register, login, updateProfile, getDailyAllowanceByUser, getUserDetails };
+// @desc    Forgot password - send OTP to email
+// @route   POST /api/users/forgot-password
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ status: 400, message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not found with this email" });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Save OTP to user
+    user.otp = otp;
+    user.otp_expires = otpExpires;
+    await User.updateOne({ _id: user._id }, { otp, otp_expires: otpExpires });
+
+    // Send OTP via email
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Password Reset OTP",
+      html: `<p>Your OTP for password reset is: <b>${otp}</b></p><p>This OTP is valid for 10 minutes.</p>`,
+    });
+
+    res.status(200).json({ status: 200, message: "OTP sent to your email" });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
+// @desc    Verify OTP
+// @route   POST /api/users/verify-otp
+const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ status: 400, message: "Email and OTP are required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not found" });
+    }
+
+    if (!user.otp || user.otp !== otp) {
+      return res.status(400).json({ status: 400, message: "Invalid OTP" });
+    }
+
+    if (user.otp_expires < new Date()) {
+      return res.status(400).json({ status: 400, message: "OTP has expired" });
+    }
+
+    res.status(200).json({ status: 200, message: "OTP verified successfully" });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
+// @desc    Reset password after OTP verification
+// @route   POST /api/users/reset-password
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, new_password } = req.body;
+
+    if (!email || !otp || !new_password) {
+      return res.status(400).json({ status: 400, message: "Email, OTP, and new password are required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not found" });
+    }
+
+    if (!user.otp || user.otp !== otp) {
+      return res.status(400).json({ status: 400, message: "Invalid OTP" });
+    }
+
+    if (user.otp_expires < new Date()) {
+      return res.status(400).json({ status: 400, message: "OTP has expired" });
+    }
+
+    // Update password and clear OTP
+    user.password = new_password;
+    user.otp = null;
+    user.otp_expires = null;
+    await user.save();
+
+    res.status(200).json({ status: 200, message: "Password reset successfully" });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
+module.exports = { register, login, updateProfile, getDailyAllowanceByUser, getUserDetails, forgotPassword, verifyOtp, resetPassword };
