@@ -148,10 +148,27 @@ const getAllVendorVisits = async (req, res) => {
   }
 };
 
+// @desc    Get vendor visits by user ID
+// @route   GET /api/vendor-visits/user/:userId
+const getVendorVisitsByUserId = async (req, res) => {
+  try {
+    const vendorVisits = await VendorVisit.find({
+      user_id: req.params.userId,
+    })
+      .populate("user_id", "full_name email")
+      .sort({ visit_date: -1 });
+
+    res.json({ status: 200, vendorVisits });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
 module.exports = {
   addVendorVisit,
   updateVendorVisit,
   deleteVendorVisit,
   getVendorVisitById,
   getAllVendorVisits,
+  getVendorVisitsByUserId,
 };

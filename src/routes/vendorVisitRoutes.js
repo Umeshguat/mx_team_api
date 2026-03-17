@@ -5,6 +5,7 @@ const {
   deleteVendorVisit,
   getVendorVisitById,
   getAllVendorVisits,
+  getVendorVisitsByUserId,
 } = require("../controllers/vendorVisitController");
 const { protect } = require("../middleware/authMiddleware");
 const { uploadFields } = require("../middleware/uploadMiddleware");
@@ -33,6 +34,9 @@ router.delete("/:id", deleteVendorVisit);
 
 // Get all vendor visits
 router.get("/", getAllVendorVisits);
+
+// Get vendor visits by user ID
+router.get("/user/:userId", getVendorVisitsByUserId);
 
 // Get vendor visit by ID
 router.get("/:id", getVendorVisitById);
