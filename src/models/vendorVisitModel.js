@@ -34,6 +34,11 @@ const vendorVisitSchema = new mongoose.Schema(
       type: Number,
       required: [true, "Longitude is required"],
     },
+    note: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     on_board: {
       type: Boolean,
       default: false,

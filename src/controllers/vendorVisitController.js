@@ -23,6 +23,7 @@ const addVendorVisit = async (req, res) => {
       longitude,
       on_board,
       visit_date,
+      note,
     } = req.body;
 
     const vendorVisit = await VendorVisit.create({
@@ -35,6 +36,7 @@ const addVendorVisit = async (req, res) => {
       longitude,
       on_board: on_board || false,
       visit_date: visit_date || Date.now(),
+      note: note || "",
     });
 
     res.status(201).json({
@@ -75,6 +77,7 @@ const updateVendorVisit = async (req, res) => {
     vendorVisit.longitude = req.body.longitude || vendorVisit.longitude;
     if (req.body.on_board !== undefined) vendorVisit.on_board = req.body.on_board;
     if (req.body.visit_date) vendorVisit.visit_date = req.body.visit_date;
+    if (req.body.note !== undefined) vendorVisit.note = req.body.note;
     if (files.selfie_with_vendor) {
       vendorVisit.selfie_with_vendor = files.selfie_with_vendor[0].path;
     }
