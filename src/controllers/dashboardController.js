@@ -84,21 +84,32 @@ const getDashboard = async (req, res) => {
 
     if (isAdmin) {
       // ---- ADMIN DASHBOARD ----
-      const totalEmployees = await User.countDocuments();
+      // Get employees under this admin's designation & headquarter
+      const employeeFilter = {
+        designation_id: user.designation_id,
+        headquarter_name: user.headquarter_name,
+      };
+
+      const employees = await User.find(employeeFilter).select("_id full_name email headquarter_name");
+      const employeeIds = employees.map((e) => e._id);
+      const totalEmployees = employees.length;
 
       const presentToday = await Attendance.distinct("user_id", {
+        user_id: { $in: employeeIds },
         check_in_time: { $gte: today, $lt: tomorrow },
       });
       const presentCount = presentToday.length;
       const absentCount = totalEmployees - presentCount;
 
       const vendorVisitsToday = await VendorVisit.countDocuments({
+        user_id: { $in: employeeIds },
         visit_date: { $gte: today, $lt: tomorrow },
       });
 
       const adminAllowanceResult = await UserDailyAllowance.aggregate([
         {
           $match: {
+            user_id: { $in: employeeIds },
             date: { $gte: today, $lt: tomorrow },
           },
         },
@@ -123,8 +134,8 @@ const getDashboard = async (req, res) => {
             adminAllowanceResult[0].total_daily
           : 0;
 
-      // All employees' today check-in data
       const todayAttendances = await Attendance.find({
+        user_id: { $in: employeeIds },
         check_in_time: { $gte: today, $lt: tomorrow },
       })
         .populate("user_id", "full_name email headquarter_name")
