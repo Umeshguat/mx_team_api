@@ -2,6 +2,7 @@ const User = require("../models/userModel");
 const Attendance = require("../models/attendanceModel");
 const VendorVisit = require("../models/vendorVisitModel");
 const UserDailyAllowance = require("../models/userAllowanceDailyReceiveModel");
+const RoleMaster = require("../models/roleMasterModel");
 
 // Helper: get today's date range
 const getTodayRange = () => {
@@ -84,14 +85,15 @@ const getDashboard = async (req, res) => {
 
     if (isAdmin) {
       // ---- ADMIN DASHBOARD ----
-      // Get employees under this admin's designation & headquarter
-      const employeeFilter = {
-        designation_id: user.role_id.permissions.includes("Employee") ? user.role_id._id : null,
-        headquarter_name: user.headquarter_name,
-      };
-      
+      // Get all non-admin employees in the same headquarter
+      const allRoles = await RoleMaster.find({ role_name: "Admin" }).select("_id");
+      const adminRoleIds = allRoles.map((r) => r._id);
 
-      const employees = await User.find(employeeFilter).select("_id full_name email headquarter_name");
+      const employees = await User.find({
+        _id: { $ne: userId },
+        role_id: { $nin: adminRoleIds },
+        headquarter_name: user.headquarter_name,
+      }).select("_id full_name email headquarter_name");
       const employeeIds = employees.map((e) => e._id);
       const totalEmployees = employees.length;
 
@@ -155,7 +157,7 @@ const getDashboard = async (req, res) => {
           vendor_visits: vendorVisitsToday,
           total_daily_allowance: totalDailyAllowance,
           my_attendance: myAttendance,
-          employees_check_in: employeesCheckIn,
+          employees_check_in: employees,
         },
       });
     }
