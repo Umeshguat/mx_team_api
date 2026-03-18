@@ -156,8 +156,8 @@ const getDashboard = async (req, res) => {
           absent_leave: absentCount,
           vendor_visits: vendorVisitsToday,
           total_daily_allowance: totalDailyAllowance,
-          my_attendance: myAttendance,
-          employees_check_in: employees,
+          my_attendance: myAttendance.slice(0, 5),
+          employees_check_in: employees.slice(0, 5),
         },
       });
     }
