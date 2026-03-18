@@ -3,6 +3,7 @@ const UserDailyAllowance = require("../models/userAllowanceDailyReceiveModel");
 const Attendance = require("../models/attendanceModel");
 const VendorVisit = require("../models/vendorVisitModel");
 const DesignationMaster = require("../models/designationMasterModel");
+const RoleMaster = require("../models/roleMasterModel");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 
@@ -408,10 +409,29 @@ const getEmployeeList = async (req, res) => {
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
 
-    const totalEmployees = await User.countDocuments();
+    const userId = req.user._id;
+    const user = await User.findById(userId).populate("role_id");
+    const isAdmin = user && user.role_id && user.role_id.role_name === "Admin";
+
+    let filter = {};
+    if (isAdmin) {
+      // Admin: show all non-admin employees in same headquarter
+      const allRoles = await RoleMaster.find({ role_name: "Admin" }).select("_id");
+      const adminRoleIds = allRoles.map((r) => r._id);
+      filter = {
+        _id: { $ne: userId },
+        role_id: { $nin: adminRoleIds },
+        headquarter_name: user.headquarter_name,
+      };
+    } else {
+      // Employee: show only themselves
+      filter = { _id: userId };
+    }
+
+    const totalEmployees = await User.countDocuments(filter);
     const totalPages = Math.ceil(totalEmployees / limit);
 
-    const employees = await User.find()
+    const employees = await User.find(filter)
       .select("-password -otp -otp_expires")
       .populate("role_id", "role_name")
       .populate("designation_id", "designation_name")
@@ -443,10 +463,31 @@ const getAttendanceList = async (req, res) => {
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
 
-    const totalRecords = await Attendance.countDocuments();
+    const userId = req.user._id;
+    const user = await User.findById(userId).populate("role_id");
+    const isAdmin = user && user.role_id && user.role_id.role_name === "Admin";
+
+    let filter = {};
+    if (isAdmin) {
+      // Admin: show attendance of all non-admin employees in same headquarter
+      const allRoles = await RoleMaster.find({ role_name: "Admin" }).select("_id");
+      const adminRoleIds = allRoles.map((r) => r._id);
+      const employees = await User.find({
+        _id: { $ne: userId },
+        role_id: { $nin: adminRoleIds },
+        headquarter_name: user.headquarter_name,
+      }).select("_id");
+      const employeeIds = employees.map((e) => e._id);
+      filter = { user_id: { $in: employeeIds } };
+    } else {
+      // Employee: show only their own attendance
+      filter = { user_id: userId };
+    }
+
+    const totalRecords = await Attendance.countDocuments(filter);
     const totalPages = Math.ceil(totalRecords / limit);
 
-    const attendances = await Attendance.find()
+    const attendances = await Attendance.find(filter)
       .populate("user_id", "full_name email headquarter_name phone_number")
       .sort({ check_in_time: -1 })
       .skip(skip)
