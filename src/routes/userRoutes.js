@@ -1,5 +1,5 @@
 const express = require("express");
-const { register, login, updateProfile, getDailyAllowanceByUser, getUserDetails, forgotPassword, verifyOtp, resetPassword } = require("../controllers/userController");
+const { register, login, updateProfile, getDailyAllowanceByUser, getUserDetails, forgotPassword, verifyOtp, resetPassword, getTeamProfiles } = require("../controllers/userController");
 const { protect } = require("../middleware/authMiddleware");
 const { getDashboard } = require("../controllers/dashboardController");
 
@@ -17,6 +17,9 @@ router.get("/details", protect, getUserDetails);
 
 // Daily Allowance
 router.get("/daily-allowance", protect, getDailyAllowanceByUser);
+
+// Team Profiles (based on designation permission hierarchy)
+router.get("/team-profiles", protect, getTeamProfiles);
 
 // Dashboard (single API for both Admin & Employee)
 router.get("/dashboard", protect, getDashboard);

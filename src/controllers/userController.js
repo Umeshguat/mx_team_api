@@ -2,6 +2,7 @@ const User = require("../models/userModel");
 const UserDailyAllowance = require("../models/userAllowanceDailyReceiveModel");
 const Attendance = require("../models/attendanceModel");
 const VendorVisit = require("../models/vendorVisitModel");
+const DesignationMaster = require("../models/designationMasterModel");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 
@@ -356,4 +357,47 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, updateProfile, getDailyAllowanceByUser, getUserDetails, forgotPassword, verifyOtp, resetPassword };
+// @desc    Get team profiles based on designation permission hierarchy
+// @route   GET /api/users/team-profiles
+const getTeamProfiles = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Get the logged-in user with their designation
+    const user = await User.findById(userId).populate("designation_id");
+
+    if (!user || !user.designation_id) {
+      return res.status(400).json({ status: 400, message: "User designation not found" });
+    }
+
+    // Get the designation's permission field (which designation they can view)
+    const designation = await DesignationMaster.findById(user.designation_id._id);
+
+    if (!designation || !designation.permission) {
+      return res.status(200).json({
+        status: 200,
+        message: "No team profiles available for your designation",
+        data: [],
+      });
+    }
+
+    // Find all users whose designation_id matches the permission designation
+    const teamProfiles = await User.find({ designation_id: designation.permission })
+      .select("-password -otp -otp_expires")
+      .populate("designation_id", "designation_name")
+      .populate("role_id", "role_name");
+
+    res.status(200).json({
+      status: 200,
+      message: "Team profiles fetched successfully",
+      your_designation: designation.designation_name,
+      viewing_designation: (await DesignationMaster.findById(designation.permission))?.designation_name || null,
+      count: teamProfiles.length,
+      data: teamProfiles,
+    });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
+module.exports = { register, login, updateProfile, getDailyAllowanceByUser, getUserDetails, forgotPassword, verifyOtp, resetPassword, getTeamProfiles };
