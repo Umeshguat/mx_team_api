@@ -152,8 +152,14 @@ const getAllVendorVisits = async (req, res) => {
 // @route   GET /api/vendor-visits/user/:userId
 const getVendorVisitsByUserId = async (req, res) => {
   try {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
     const vendorVisits = await VendorVisit.find({
       user_id: req.params.userId,
+      visit_date: { $gte: startOfDay, $lte: endOfDay },
     })
       .populate("user_id", "full_name email")
       .sort({ visit_date: -1 });
