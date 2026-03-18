@@ -4,14 +4,14 @@ const DesignationMaster = require("../models/designationMasterModel");
 // @route   POST /api/admin/designations
 const createDesignation = async (req, res) => {
   try {
-    const { designation_name } = req.body;
+    const { designation_name, permission } = req.body;
 
     const exists = await DesignationMaster.findOne({ designation_name });
     if (exists) {
       return res.status(400).json({ message: "Designation already exists" });
     }
 
-    const designation = await DesignationMaster.create({ designation_name });
+    const designation = await DesignationMaster.create({ designation_name, permission });
     res.status(201).json(designation);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -53,6 +53,7 @@ const updateDesignation = async (req, res) => {
     }
 
     designation.designation_name = req.body.designation_name ?? designation.designation_name;
+    designation.permission = req.body.permission ?? designation.permission;
     designation.status = req.body.status ?? designation.status;
 
     const updated = await designation.save();
