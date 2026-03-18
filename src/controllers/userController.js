@@ -400,4 +400,108 @@ const getTeamProfiles = async (req, res) => {
   }
 };
 
-module.exports = { register, login, updateProfile, getDailyAllowanceByUser, getUserDetails, forgotPassword, verifyOtp, resetPassword, getTeamProfiles };
+// @desc    Get employee list with pagination
+// @route   GET /api/users/employee-list?page=1&limit=5
+const getEmployeeList = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    const totalEmployees = await User.countDocuments();
+    const totalPages = Math.ceil(totalEmployees / limit);
+
+    const employees = await User.find()
+      .select("-password -otp -otp_expires")
+      .populate("role_id", "role_name")
+      .populate("designation_id", "designation_name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.status(200).json({
+      status: 200,
+      message: "Employee list fetched successfully",
+      data: employees,
+      pagination: {
+        current_page: page,
+        total_pages: totalPages,
+        total_records: totalEmployees,
+        limit,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
+// @desc    Get attendance list with pagination
+// @route   GET /api/users/attendance-list?page=1&limit=5
+const getAttendanceList = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    const totalRecords = await Attendance.countDocuments();
+    const totalPages = Math.ceil(totalRecords / limit);
+
+    const attendances = await Attendance.find()
+      .populate("user_id", "full_name email headquarter_name phone_number")
+      .sort({ check_in_time: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const formattedAttendances = attendances.map((item) => {
+      const checkInTime = item.check_in_time
+        ? item.check_in_time.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })
+        : null;
+      const checkOutTime = item.check_out_time
+        ? item.check_out_time.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })
+        : null;
+
+      let hours = "0h 0m";
+      if (item.check_in_time && item.check_out_time) {
+        const diff = item.check_out_time - item.check_in_time;
+        const totalMinutes = Math.floor(diff / 60000);
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        hours = `${h}h ${m}m`;
+      }
+
+      return {
+        _id: item._id,
+        user_id: item.user_id?._id || item.user_id,
+        full_name: item.user_id?.full_name || null,
+        email: item.user_id?.email || null,
+        headquarter_name: item.headquarter_name,
+        working_town: item.working_town,
+        route: item.route,
+        date: item.check_in_time,
+        check_in_time: checkInTime,
+        check_out_time: checkOutTime,
+        check_in_km: item.check_in_km,
+        check_out_km: item.check_out_km,
+        total_km: item.check_out_km ? item.check_out_km - item.check_in_km : 0,
+        hours,
+        status: item.status === "checked_out" ? "Checked Out" : "Checked In",
+      };
+    });
+
+    res.status(200).json({
+      status: 200,
+      message: "Attendance list fetched successfully",
+      data: formattedAttendances,
+      pagination: {
+        current_page: page,
+        total_pages: totalPages,
+        total_records: totalRecords,
+        limit,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
+module.exports = { register, login, updateProfile, getDailyAllowanceByUser, getUserDetails, forgotPassword, verifyOtp, resetPassword, getTeamProfiles, getEmployeeList, getAttendanceList };
