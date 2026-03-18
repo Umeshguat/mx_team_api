@@ -86,9 +86,10 @@ const getDashboard = async (req, res) => {
       // ---- ADMIN DASHBOARD ----
       // Get employees under this admin's designation & headquarter
       const employeeFilter = {
-        designation_id: user.designation_id,
+        designation_id: user.role_id.permissions.includes("Employee") ? user.role_id._id : null,
         headquarter_name: user.headquarter_name,
       };
+      
 
       const employees = await User.find(employeeFilter).select("_id full_name email headquarter_name");
       const employeeIds = employees.map((e) => e._id);
