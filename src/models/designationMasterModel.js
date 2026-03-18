@@ -8,6 +8,11 @@ const designationMasterSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    permission: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "DesignationMaster",
+      default: null,
+    },
     status: {
       type: Boolean,
       default: true,
