@@ -1,15 +1,20 @@
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const path = require("path");
 
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
+let s3Client;
 
-const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME;
+const getS3Client = () => {
+  if (!s3Client) {
+    s3Client = new S3Client({
+      region: process.env.AWS_REGION,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      },
+    });
+  }
+  return s3Client;
+};
 
 /**
  * Upload a file buffer to S3
@@ -24,16 +29,18 @@ const uploadToS3 = async (fileBuffer, originalName, mimetype, folder) => {
   const ext = path.extname(originalName);
   const key = `mx_team/${folder}/${uniqueSuffix}${ext}`;
 
+  const bucketName = process.env.AWS_S3_BUCKET_NAME;
+
   const command = new PutObjectCommand({
-    Bucket: BUCKET_NAME,
+    Bucket: bucketName,
     Key: key,
     Body: fileBuffer,
     ContentType: mimetype,
   });
 
-  await s3Client.send(command);
+  await getS3Client().send(command);
 
-  return `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+  return `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 };
 
 /**
