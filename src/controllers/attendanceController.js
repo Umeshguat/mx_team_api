@@ -2,6 +2,9 @@ const Attendance = require("../models/attendanceModel");
 const User = require("../models/userModel");
 const AllowanceMaster = require("../models/allowanceMasterModel");
 const UserDailyAllowance = require("../models/userAllowanceDailyReceiveModel");
+const { uploadFilesToS3 } = require("../utils/s3Upload");
+
+const S3_FOLDER = "attendance";
 
 // @desc    Check in attendance
 // @route   POST /api/attendance/check-in
@@ -34,7 +37,6 @@ const checkIn = async (req, res) => {
       other_amount,
     } = req.body;
 
-    // Build image paths from uploaded files
     const files = req.files || {};
 
     const kmImage = files.check_in_image || files.km_image;
@@ -44,21 +46,24 @@ const checkIn = async (req, res) => {
       });
     }
 
+    // Upload all images to S3
+    const s3Urls = await uploadFilesToS3(files, S3_FOLDER);
+
     const attendance = await Attendance.create({
       user_id: userId,
       check_in_time: new Date(),
       check_in_km: check_in_km || total_km,
-      check_in_image: kmImage[0].path,
-      selfie_image: files.selfie_image[0].path,
+      check_in_image: s3Urls.check_in_image || s3Urls.km_image,
+      selfie_image: s3Urls.selfie_image,
       headquarter_name,
       working_town,
       route,
-      stay_image: files.stay_image ? files.stay_image[0].path : null,
+      stay_image: s3Urls.stay_image || null,
       stay_amount: stay_amount || 0,
       food_amount: food_amount || 0,
-      food_image: files.food_image ? files.food_image[0].path : null,
+      food_image: s3Urls.food_image || null,
       other_amount: other_amount || 0,
-      other_image: files.other_image ? files.other_image[0].path : null,
+      other_image: s3Urls.other_image || null,
     });
 
     res.status(201).json({
@@ -104,18 +109,21 @@ const checkOut = async (req, res) => {
       });
     }
 
+    // Upload all images to S3
+    const s3Urls = await uploadFilesToS3(files, S3_FOLDER);
+
     attendance.check_out_time = new Date();
     attendance.check_out_km = total_km;
-    attendance.check_out_image = files.check_out_image[0].path;
+    attendance.check_out_image = s3Urls.check_out_image;
     attendance.status = "checked_out";
 
     // Update optional expense fields if provided during checkout
-    if (files.stay_image) attendance.stay_image = files.stay_image[0].path;
+    if (s3Urls.stay_image) attendance.stay_image = s3Urls.stay_image;
     if (req.body.stay_amount) attendance.stay_amount = req.body.stay_amount;
     if (req.body.food_amount) attendance.food_amount = req.body.food_amount;
-    if (files.food_image) attendance.food_image = files.food_image[0].path;
+    if (s3Urls.food_image) attendance.food_image = s3Urls.food_image;
     if (req.body.other_amount) attendance.other_amount = req.body.other_amount;
-    if (files.other_image) attendance.other_image = files.other_image[0].path;
+    if (s3Urls.other_image) attendance.other_image = s3Urls.other_image;
 
     const updatedAttendance = await attendance.save();
 

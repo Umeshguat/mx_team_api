@@ -1,4 +1,7 @@
 const VendorVisit = require("../models/vendorVisitModel");
+const { uploadFilesToS3 } = require("../utils/s3Upload");
+
+const S3_FOLDER = "vendor-visits";
 
 // @desc    Add vendor visit
 // @route   POST /api/vendor-visits
@@ -26,11 +29,14 @@ const addVendorVisit = async (req, res) => {
       note,
     } = req.body;
 
+    // Upload selfie to S3
+    const s3Urls = await uploadFilesToS3(files, S3_FOLDER);
+
     const vendorVisit = await VendorVisit.create({
       user_id: req.user._id,
       vendor_name,
       vendor_mobile,
-      selfie_with_vendor: files.selfie_with_vendor[0].path,
+      selfie_with_vendor: s3Urls.selfie_with_vendor,
       address_gps,
       latitude,
       longitude,
@@ -79,7 +85,8 @@ const updateVendorVisit = async (req, res) => {
     if (req.body.visit_date) vendorVisit.visit_date = req.body.visit_date;
     if (req.body.note !== undefined) vendorVisit.note = req.body.note;
     if (files.selfie_with_vendor) {
-      vendorVisit.selfie_with_vendor = files.selfie_with_vendor[0].path;
+      const s3Urls = await uploadFilesToS3(files, S3_FOLDER);
+      vendorVisit.selfie_with_vendor = s3Urls.selfie_with_vendor;
     }
 
     const updatedVisit = await vendorVisit.save();
