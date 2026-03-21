@@ -4,6 +4,7 @@ const {
   checkOut,
   getTodayAttendance,
   getAttendanceHistory,
+  getCheckInData,
 } = require("../controllers/attendanceController");
 const { protect } = require("../middleware/authMiddleware");
 const { uploadFields } = require("../middleware/uploadMiddleware");
@@ -40,6 +41,9 @@ router.post(
   ]),
   checkOut
 );
+
+// Get active check-in data for checkout modal
+router.get("/check-in-data", getCheckInData);
 
 // Get today's attendance
 router.get("/today", getTodayAttendance);

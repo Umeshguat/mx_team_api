@@ -241,4 +241,59 @@ const getAttendanceHistory = async (req, res) => {
   }
 };
 
-module.exports = { checkIn, checkOut, getTodayAttendance, getAttendanceHistory };
+// @desc    Get active check-in data for checkout modal
+// @route   GET /api/attendance/check-in-data
+const getCheckInData = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    console.log("Getting check-in data for user:", userId, today, tomorrow);
+
+    const attendance = await Attendance.findOne({
+      user_id: userId,
+      status: "checked_in",
+      check_in_time: { $gte: today, $lt: tomorrow },
+    }).populate("user_id", "full_name");
+
+    if (!attendance) {
+      return res.status(404).json({
+        status: 404,
+        message: "No active check-in found for today",
+      });
+    }
+
+    const checkInTime = attendance.check_in_time
+      ? attendance.check_in_time.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })
+      : null;
+
+    res.json({
+      status: 200,
+      checkInData: {
+        _id: attendance._id,
+        full_name: attendance.user_id?.full_name || null,
+        check_in_time: checkInTime,
+        check_in_km: attendance.check_in_km,
+        check_in_image: attendance.check_in_image,
+        selfie_image: attendance.selfie_image,
+        headquarter_name: attendance.headquarter_name,
+        working_town: attendance.working_town,
+        route: attendance.route,
+        stay_amount: attendance.stay_amount,
+        stay_image: attendance.stay_image,
+        food_amount: attendance.food_amount,
+        food_image: attendance.food_image,
+        other_amount: attendance.other_amount,
+        other_image: attendance.other_image,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
+module.exports = { checkIn, checkOut, getTodayAttendance, getAttendanceHistory, getCheckInData };
