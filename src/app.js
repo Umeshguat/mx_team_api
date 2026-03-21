@@ -5,6 +5,7 @@ const userRoutes = require("./routes/userRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
 const vendorVisitRoutes = require("./routes/vendorVisitRoutes");
+const inventoryRoutes = require("./routes/inventoryRoutes");
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/vendor-visits", vendorVisitRoutes);
+app.use("/api/inventory", inventoryRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Salesmen API is running" });
