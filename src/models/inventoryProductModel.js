@@ -50,10 +50,6 @@ const inventoryProductSchema = new mongoose.Schema(
       type: String,
       required: [true, "Brand is required"],
       trim: true,
-      enum: {
-        values: ["Tru-Shine", "MelloMelt", "Other"],
-        message: "Brand must be Tru-Shine, MelloMelt, or Other",
-      },
     },
     category: {
       type: String,

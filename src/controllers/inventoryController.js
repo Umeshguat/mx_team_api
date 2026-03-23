@@ -20,6 +20,8 @@ const createProduct = async (req, res) => {
       image,
     } = req.body;
 
+    console.log("Creating product with data:", req.body);
+
     const existingProduct = await InventoryProduct.findOne({ product_code });
     if (existingProduct) {
       return res
