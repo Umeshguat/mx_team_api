@@ -30,18 +30,12 @@ const paymentCreditSchema = new mongoose.Schema(
       type: Number,
       required: [true, "Remaining amount is required"],
     },
-    password: {
+    payment_status: {
       type: String,
-      required: [true, "Password is required"],
-    },
-    otp: {
-      type: String,
-      default: null,
-    },
-    otp_expires: {
-      type: Date,
-      default: null,
-    },
+      required: [true, "Payment status is required"],
+      enum: ["pending", "partial", "paid"],
+      default: "pending",
+    }
   },
   {
     timestamps: true,
