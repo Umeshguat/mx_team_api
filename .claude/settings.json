@@ -5,7 +5,8 @@
       "Read(//e/project_after_1_/ dec_2025/Salesmensapi/src/**)",
       "Read(//e/project_after_1_ dec_2025/**)",
       "Bash(xargs basename:*)",
-      "Bash(node -e \"require\\(''./src/utils/s3Upload''\\); require\\(''./src/middleware/uploadMiddleware''\\); console.log\\(''All modules loaded successfully''\\);\")"
+      "Bash(node -e \"require\\(''./src/utils/s3Upload''\\); require\\(''./src/middleware/uploadMiddleware''\\); console.log\\(''All modules loaded successfully''\\);\")",
+      "Bash(node -e \":*)"
     ],
     "additionalDirectories": [
       "e:\\project_after_1_ dec_2025\\salesmens\\src\\components"

@@ -130,7 +130,7 @@ const paymentCreditSchema = new mongoose.Schema(
 );
 
 // Auto-calculate remaining_amount before saving
-paymentCreditSchema.pre("save", function (next) {
+paymentCreditSchema.pre("save", async function () {
   this.remaining_amount = this.total_amount - this.paid_amount;
   if (this.remaining_amount <= 0) {
     this.remaining_amount = 0;
@@ -138,7 +138,6 @@ paymentCreditSchema.pre("save", function (next) {
   } else if (this.paid_amount > 0) {
     this.payment_status = "partial";
   }
-  next();
 });
 
 const PaymentCredit = mongoose.model("PaymentCredit", paymentCreditSchema);
