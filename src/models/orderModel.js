@@ -9,7 +9,7 @@ const orderItemSchema = new mongoose.Schema(
     },
     batch_id: {
       type: mongoose.Schema.Types.ObjectId,
-      required: [true, "Batch ID is required"],
+      default: null,
     },
     product_name: {
       type: String,

@@ -58,9 +58,18 @@ const createOrder = async (req, res) => {
         });
       }
 
+      // Auto-pick first active batch if not provided
+      let batchId = item.batch_id || null;
+      if (!batchId) {
+        const activeBatch = product.batches
+          .filter((b) => b.is_active && b.quantity > 0)
+          .sort((a, b) => a.manufacturing_date - b.manufacturing_date)[0];
+        if (activeBatch) batchId = activeBatch._id;
+      }
+
       orderItems.push({
         product_id: product._id,
-        batch_id: item.batch_id,
+        batch_id: batchId,
         product_name: product.product_name,
         product_code: product.product_code,
         quantity: item.quantity,

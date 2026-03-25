@@ -6,10 +6,12 @@
       "Read(//e/project_after_1_ dec_2025/**)",
       "Bash(xargs basename:*)",
       "Bash(node -e \"require\\(''./src/utils/s3Upload''\\); require\\(''./src/middleware/uploadMiddleware''\\); console.log\\(''All modules loaded successfully''\\);\")",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(xargs grep:*)"
     ],
     "additionalDirectories": [
-      "e:\\project_after_1_ dec_2025\\salesmens\\src\\components"
+      "e:\\project_after_1_ dec_2025\\salesmens\\src\\components",
+      "e:\\project_after_1_ dec_2025\\salesmens\\src\\screens"
     ]
   }
 }
