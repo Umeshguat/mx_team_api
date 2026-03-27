@@ -125,11 +125,12 @@ const createPaymentCredit = async (req, res) => {
 // @route   GET /api/payment-credits
 const getAllPaymentCredits = async (req, res) => {
   try {
-    const { payment_status, search, from, to, created_by, vendor_name } =
+    const { payment_status, search, from, to, created_by, vendor_name, order_id } =
       req.query;
 
     const filter = {};
 
+    if (order_id) filter.order_id = order_id;
     if (payment_status) filter.payment_status = payment_status;
     if (created_by) filter.created_by = created_by;
     if (vendor_name) filter.vendor_name = { $regex: vendor_name, $options: "i" };

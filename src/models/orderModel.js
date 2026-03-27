@@ -129,6 +129,39 @@ const orderSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    delivery_address: {
+      address: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+      city: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+      state: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+      pincode: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+      location: {
+        type: {
+          type: String,
+          enum: ["Point"],
+          default: "Point",
+        },
+        coordinates: {
+          type: [Number], // [longitude, latitude]
+          default: [0, 0],
+        },
+      },
+    },
     delivered_date: {
       type: Date,
       default: null,
@@ -143,6 +176,8 @@ const orderSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+orderSchema.index({ "delivery_address.location": "2dsphere" });
 
 // Calculate subtotal from items
 orderSchema.methods.calculateTotals = function () {
