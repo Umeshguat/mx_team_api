@@ -118,18 +118,26 @@ const getMyDeliveries = async (req, res) => {
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    const [deliveries, total] = await Promise.all([
+    const userFilter = { assigned_to: req.user._id };
+
+    const [deliveries, total, totalPending, totalInTransit, totalDelivered] = await Promise.all([
       Delivery.find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum),
       Delivery.countDocuments(filter),
+      Delivery.countDocuments({ ...userFilter, delivery_status: "assigned" }),
+      Delivery.countDocuments({ ...userFilter, delivery_status: "in_transit" }),
+      Delivery.countDocuments({ ...userFilter, delivery_status: "delivered" }),
     ]);
 
     res.json({
       status: 200,
       count: deliveries.length,
       total,
+      totalPending,
+      totalInTransit,
+      totalDelivered,
       page: pageNum,
       totalPages: Math.ceil(total / limitNum),
       deliveries,
