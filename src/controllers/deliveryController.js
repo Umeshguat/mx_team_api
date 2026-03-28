@@ -100,10 +100,10 @@ const getAllDeliveries = async (req, res) => {
 };
 
 // @desc    Get my assigned deliveries (logged-in employee)
-// @route   GET /api/deliveries/my-deliveries
+// @route   POST /api/deliveries/my-deliveries
 const getMyDeliveries = async (req, res) => {
   try {
-    const { delivery_status, priority, from, to } = req.query;
+    const { delivery_status, priority, from, to, page = 1, limit = 10 } = req.body;
     const filter = { assigned_to: req.user._id };
 
     if (delivery_status) filter.delivery_status = delivery_status;
@@ -114,11 +114,27 @@ const getMyDeliveries = async (req, res) => {
       if (to) filter.createdAt.$lte = new Date(to);
     }
 
-    const deliveries = await Delivery.find(filter)
-      .populate("order_id", "order_number grand_total order_status payment_status items")
-      .sort({ createdAt: -1 });
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
 
-    res.json({ status: 200, count: deliveries.length, deliveries });
+    const [deliveries, total] = await Promise.all([
+      Delivery.find(filter)
+        .populate("order_id", "order_number grand_total order_status payment_status items")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum),
+      Delivery.countDocuments(filter),
+    ]);
+
+    res.json({
+      status: 200,
+      count: deliveries.length,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+      deliveries,
+    });
   } catch (error) {
     res.status(500).json({ status: 500, message: error.message });
   }

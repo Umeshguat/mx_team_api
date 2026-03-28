@@ -16,7 +16,7 @@ const router = express.Router();
 router.use(protect);
 
 // My deliveries (logged-in employee)
-router.get("/my-deliveries", getMyDeliveries);
+router.post("/my-deliveries", getMyDeliveries);
 
 // Delivery CRUD
 router.route("/").get(getAllDeliveries).post(createDelivery);
