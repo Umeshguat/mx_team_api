@@ -1,6 +1,7 @@
 const express = require("express");
 const { protect } = require("../middleware/authMiddleware");
 const {
+  getDashboardData,
   createDelivery,
   getAllDeliveries,
   getMyDeliveries,
@@ -15,6 +16,8 @@ const router = express.Router();
 // All routes require authentication
 router.use(protect);
 
+//dashboard
+router.get("/dashboard", getDashboardData);
 // My deliveries (logged-in employee)
 router.post("/my-deliveries", getMyDeliveries);
 

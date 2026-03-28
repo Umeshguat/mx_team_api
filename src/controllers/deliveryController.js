@@ -3,6 +3,42 @@ const Order = require("../models/orderModel");
 
 // @desc    Assign delivery to employee
 // @route   POST /api/deliveries
+
+//@route   POST /api/deliveries/dashboard
+const getDashboardData = async (req, res) => {
+  try {
+    const totalDeliveries = await Delivery.countDocuments();
+    const pendingDeliveries = await Delivery.countDocuments({ delivery_status: "assigned" });
+    const inTransitDeliveries = await Delivery.countDocuments({ delivery_status: "in_transit" });
+    const deliveredDeliveries = await Delivery.countDocuments({ delivery_status: "delivered" });
+    const deliveredToday = await Delivery.countDocuments({
+      delivery_status: "delivered",
+      delivered_at: {
+        $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+        $lte: new Date(new Date().setHours(23, 59, 59, 999)),
+      },
+    });
+
+    const latestDeliveries = await Delivery.find()
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    res.json({
+      status: 200,
+      message: "Dashboard data retrieved successfully",
+      data: {
+        totalDeliveries,
+        pendingDeliveries,
+        inTransitDeliveries,
+        deliveredDeliveries,
+        deliveredToday,
+        latestDeliveries,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
 const createDelivery = async (req, res) => {
   try {
     const {
@@ -316,4 +352,5 @@ module.exports = {
   updateDelivery,
   updateDeliveryStatus,
   deleteDelivery,
+  getDashboardData,
 };
