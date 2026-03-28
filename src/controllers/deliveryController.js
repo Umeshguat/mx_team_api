@@ -120,7 +120,6 @@ const getMyDeliveries = async (req, res) => {
 
     const [deliveries, total] = await Promise.all([
       Delivery.find(filter)
-        .populate("order_id", "order_number grand_total order_status payment_status items")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum),
