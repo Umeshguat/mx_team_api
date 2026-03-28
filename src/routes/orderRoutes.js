@@ -5,6 +5,7 @@ const {
   getAllOrders,
   getMyOrders,
   getOrderById,
+  updateOrder,
   updateOrderStatus,
   updatePaymentStatus,
   deleteOrder,
@@ -26,7 +27,7 @@ router.get("/my-orders", getMyOrders);
 
 // Order CRUD
 router.route("/").get(getAllOrders).post(createOrder);
-router.route("/:id").get(getOrderById).delete(deleteOrder);
+router.route("/:id").get(getOrderById).put(updateOrder).delete(deleteOrder);
 
 // Status updates
 router.put("/:id/status", updateOrderStatus);

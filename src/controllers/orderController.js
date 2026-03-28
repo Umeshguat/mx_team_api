@@ -32,6 +32,7 @@ const createOrder = async (req, res) => {
       tax,
       payment_mode,
       note,
+      delivery_address,
     } = req.body;
 
     if (!items || items.length === 0) {
@@ -94,6 +95,7 @@ const createOrder = async (req, res) => {
       grand_total,
       payment_mode: payment_mode || "cash",
       note: note || "",
+      delivery_address: delivery_address || {},
       created_by: req.user._id,
     });
 
@@ -261,6 +263,73 @@ const getOrderById = async (req, res) => {
       );
 
     res.json({ status: 200, order, paymentCredit: paymentCredit || null });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
+// @desc    Update order details (only pending orders)
+// @route   PUT /api/orders/:id
+const updateOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res
+        .status(404)
+        .json({ status: 404, message: "Order not found" });
+    }
+
+    if (order.order_status !== "pending") {
+      return res.status(400).json({
+        status: 400,
+        message: "Only pending orders can be updated",
+      });
+    }
+
+    const {
+      vendor_name,
+      vendor_mobile,
+      vendor_address,
+      delivery_address,
+      discount,
+      tax,
+      payment_mode,
+      note,
+    } = req.body;
+
+    if (vendor_name !== undefined) order.vendor_name = vendor_name;
+    if (vendor_mobile !== undefined) order.vendor_mobile = vendor_mobile;
+    if (vendor_address !== undefined) order.vendor_address = vendor_address;
+    if (note !== undefined) order.note = note;
+    if (payment_mode !== undefined) order.payment_mode = payment_mode;
+
+    if (delivery_address !== undefined) {
+      if (delivery_address.address !== undefined)
+        order.delivery_address.address = delivery_address.address;
+      if (delivery_address.city !== undefined)
+        order.delivery_address.city = delivery_address.city;
+      if (delivery_address.state !== undefined)
+        order.delivery_address.state = delivery_address.state;
+      if (delivery_address.pincode !== undefined)
+        order.delivery_address.pincode = delivery_address.pincode;
+      if (delivery_address.location !== undefined)
+        order.delivery_address.location = delivery_address.location;
+    }
+
+    if (discount !== undefined || tax !== undefined) {
+      if (discount !== undefined) order.discount = discount;
+      if (tax !== undefined) order.tax = tax;
+      order.grand_total = order.subtotal - order.discount + order.tax;
+    }
+
+    await order.save();
+
+    res.json({
+      status: 200,
+      message: "Order updated successfully",
+      order,
+    });
   } catch (error) {
     res.status(500).json({ status: 500, message: error.message });
   }
@@ -694,6 +763,7 @@ module.exports = {
   getAllOrders,
   getMyOrders,
   getOrderById,
+  updateOrder,
   updateOrderStatus,
   updatePaymentStatus,
   deleteOrder,
