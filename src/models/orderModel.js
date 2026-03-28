@@ -166,6 +166,11 @@ const orderSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    assigned_to: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

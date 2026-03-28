@@ -2,6 +2,17 @@ const Order = require("../models/orderModel");
 const InventoryProduct = require("../models/inventoryProductModel");
 const InventoryTransaction = require("../models/inventoryTransactionModel");
 const PaymentCredit = require("../models/paymentCreditModel");
+const User = require("../models/userModel");
+const Delivery = require("../models/deliveryModel");
+
+// Helper: find user by city (headquarter_name matches delivery city)
+const findUserByCity = async (city) => {
+  if (!city) return null;
+  const user = await User.findOne({
+    headquarter_name: { $regex: `^${city}$`, $options: "i" },
+  });
+  return user;
+};
 
 // Helper: generate unique order number
 const generateOrderNumber = async () => {
@@ -83,6 +94,12 @@ const createOrder = async (req, res) => {
     const grand_total = subtotal - (discount || 0) + (tax || 0);
     const order_number = await generateOrderNumber();
 
+    // Auto-assign user based on delivery address city
+    let assignedUser = null;
+    if (delivery_address && delivery_address.city) {
+      assignedUser = await findUserByCity(delivery_address.city);
+    }
+
     const order = await Order.create({
       order_number,
       vendor_name,
@@ -96,8 +113,21 @@ const createOrder = async (req, res) => {
       payment_mode: payment_mode || "cash",
       note: note || "",
       delivery_address: delivery_address || {},
+      assigned_to: assignedUser ? assignedUser._id : null,
       created_by: req.user._id,
     });
+
+    // Auto-create delivery if user is assigned
+    if (assignedUser) {
+      await Delivery.create({
+        order_id: order._id,
+        order_number: order.order_number,
+        assigned_to: assignedUser._id,
+        vendor_name: order.vendor_name,
+        vendor_mobile: order.vendor_mobile,
+        delivery_address: delivery_address || {},
+      });
+    }
 
     // Auto-create PaymentCredit if payment_mode is "credit"
     if (payment_mode === "credit") {
@@ -169,8 +199,13 @@ const createOrder = async (req, res) => {
 
     res.status(201).json({
       status: 201,
-      message: "Order created successfully",
+      message: assignedUser
+        ? `Order created and assigned to ${assignedUser.full_name}`
+        : "Order created successfully (no matching user found for delivery city)",
       order,
+      assigned_to: assignedUser
+        ? { _id: assignedUser._id, full_name: assignedUser.full_name, headquarter_name: assignedUser.headquarter_name }
+        : null,
     });
   } catch (error) {
     res.status(500).json({ status: 500, message: error.message });
@@ -209,6 +244,7 @@ const getAllOrders = async (req, res) => {
     }
 
     const orders = await Order.find(filter)
+      .populate("assigned_to", "full_name email phone_number headquarter_name")
       .populate("created_by", "full_name email")
       .sort({ createdAt: -1 });
 
@@ -246,6 +282,7 @@ const getMyOrders = async (req, res) => {
 const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
+      .populate("assigned_to", "full_name email phone_number headquarter_name")
       .populate("created_by", "full_name email")
       .populate("items.product_id", "product_name product_code brand category image");
 
@@ -304,17 +341,54 @@ const updateOrder = async (req, res) => {
     if (note !== undefined) order.note = note;
     if (payment_mode !== undefined) order.payment_mode = payment_mode;
 
+    let reassignedUser = null;
+    let cityChanged = false;
+
     if (delivery_address !== undefined) {
       if (delivery_address.address !== undefined)
         order.delivery_address.address = delivery_address.address;
-      if (delivery_address.city !== undefined)
+      if (delivery_address.city !== undefined) {
+        const oldCity = order.delivery_address.city || "";
+        if (oldCity.toLowerCase() !== delivery_address.city.toLowerCase()) {
+          cityChanged = true;
+        }
         order.delivery_address.city = delivery_address.city;
+      }
       if (delivery_address.state !== undefined)
         order.delivery_address.state = delivery_address.state;
       if (delivery_address.pincode !== undefined)
         order.delivery_address.pincode = delivery_address.pincode;
       if (delivery_address.location !== undefined)
         order.delivery_address.location = delivery_address.location;
+    }
+
+    // Reassign user if city changed
+    if (cityChanged) {
+      reassignedUser = await findUserByCity(order.delivery_address.city);
+      order.assigned_to = reassignedUser ? reassignedUser._id : null;
+
+      // Update or create delivery record
+      const existingDelivery = await Delivery.findOne({ order_id: order._id });
+      if (existingDelivery) {
+        if (reassignedUser) {
+          existingDelivery.assigned_to = reassignedUser._id;
+          existingDelivery.delivery_address = order.delivery_address;
+          existingDelivery.vendor_name = order.vendor_name;
+          existingDelivery.vendor_mobile = order.vendor_mobile;
+          await existingDelivery.save();
+        } else {
+          await existingDelivery.deleteOne();
+        }
+      } else if (reassignedUser) {
+        await Delivery.create({
+          order_id: order._id,
+          order_number: order.order_number,
+          assigned_to: reassignedUser._id,
+          vendor_name: order.vendor_name,
+          vendor_mobile: order.vendor_mobile,
+          delivery_address: order.delivery_address,
+        });
+      }
     }
 
     if (discount !== undefined || tax !== undefined) {
@@ -327,8 +401,15 @@ const updateOrder = async (req, res) => {
 
     res.json({
       status: 200,
-      message: "Order updated successfully",
+      message: cityChanged && reassignedUser
+        ? `Order updated and reassigned to ${reassignedUser.full_name}`
+        : cityChanged
+        ? "Order updated (no matching user found for new delivery city)"
+        : "Order updated successfully",
       order,
+      assigned_to: reassignedUser
+        ? { _id: reassignedUser._id, full_name: reassignedUser.full_name, headquarter_name: reassignedUser.headquarter_name }
+        : undefined,
     });
   } catch (error) {
     res.status(500).json({ status: 500, message: error.message });
