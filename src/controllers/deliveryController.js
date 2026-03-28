@@ -7,11 +7,13 @@ const Order = require("../models/orderModel");
 //@route   POST /api/deliveries/dashboard
 const getDashboardData = async (req, res) => {
   try {
-    const totalDeliveries = await Delivery.countDocuments();
-    const pendingDeliveries = await Delivery.countDocuments({ delivery_status: "assigned" });
-    const inTransitDeliveries = await Delivery.countDocuments({ delivery_status: "in_transit" });
-    const deliveredDeliveries = await Delivery.countDocuments({ delivery_status: "delivered" });
+    const filter = { assigned_to: req.user._id };
+    const totalDeliveries = await Delivery.countDocuments(filter);
+    const pendingDeliveries = await Delivery.countDocuments({ ...filter, delivery_status: "assigned" });
+    const inTransitDeliveries = await Delivery.countDocuments({ ...filter, delivery_status: "in_transit" });
+    const deliveredDeliveries = await Delivery.countDocuments({ ...filter, delivery_status: "delivered" });
     const deliveredToday = await Delivery.countDocuments({
+      ...filter,
       delivery_status: "delivered",
       delivered_at: {
         $gte: new Date(new Date().setHours(0, 0, 0, 0)),
@@ -19,7 +21,7 @@ const getDashboardData = async (req, res) => {
       },
     });
 
-    const latestDeliveries = await Delivery.find()
+    const latestDeliveries = await Delivery.find(filter)
       .sort({ createdAt: -1 })
       .limit(5);
 
