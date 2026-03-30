@@ -23,9 +23,16 @@ const createDesignation = async (req, res) => {
 const getDesignations = async (req, res) => {
   try {
     const designations = await DesignationMaster.find().sort({ createdAt: -1 });
-    res.json(designations);
+    res.status(200).json({
+      status: 200,
+      message: "Designations retrieved successfully",
+      data: designations
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      status: 500,
+      message: error.message
+    });
   }
 };
 
@@ -35,7 +42,10 @@ const getDesignationById = async (req, res) => {
   try {
     const designation = await DesignationMaster.findById(req.params.id);
     if (!designation) {
-      return res.status(404).json({ message: "Designation not found" });
+      return res.status(404).json({
+        status: 404,
+        message: "Designation not found"
+      });
     }
     res.json(designation);
   } catch (error) {
