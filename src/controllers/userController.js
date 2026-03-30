@@ -6,6 +6,7 @@ const DesignationMaster = require("../models/designationMasterModel");
 const RoleMaster = require("../models/roleMasterModel");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const { uploadToS3 } = require("../utils/s3Upload");
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -33,6 +34,13 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    // Upload profile image to S3 if provided
+    let profile_image = null;
+    if (req.files && req.files.profile_image && req.files.profile_image.length > 0) {
+      const file = req.files.profile_image[0];
+      profile_image = await uploadToS3(file.buffer, file.originalname, file.mimetype, "profiles");
+    }
+
     const user = await User.create({
       full_name,
       email,
@@ -41,6 +49,7 @@ const register = async (req, res) => {
       headquarter_name,
       phone_number,
       password,
+      profile_image,
     });
 
     res.status(201).json({
@@ -51,6 +60,7 @@ const register = async (req, res) => {
       designation_id: user.designation_id,
       headquarter_name: user.headquarter_name,
       phone_number: user.phone_number,
+      profile_image: user.profile_image,
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -86,6 +96,7 @@ const login = async (req, res) => {
       designation_name: user.designation_id?.designation_name || null,
       headquarter_name: user.headquarter_name,
       phone_number: user.phone_number,
+      profile_image: user.profile_image,
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -114,6 +125,12 @@ const updateProfile = async (req, res) => {
       user.password = req.body.password;
     }
 
+    // Upload profile image to S3 if provided
+    if (req.files && req.files.profile_image && req.files.profile_image.length > 0) {
+      const file = req.files.profile_image[0];
+      user.profile_image = await uploadToS3(file.buffer, file.originalname, file.mimetype, "profiles");
+    }
+
     const updatedUser = await user.save();
 
     res.json({
@@ -124,6 +141,7 @@ const updateProfile = async (req, res) => {
       designation_id: updatedUser.designation_id,
       headquarter_name: updatedUser.headquarter_name,
       phone_number: updatedUser.phone_number,
+      profile_image: updatedUser.profile_image,
       token: generateToken(updatedUser._id),
     });
   } catch (error) {
@@ -173,7 +191,7 @@ const getUserDetails = async (req, res) => {
     const userId = req.user._id;
 
     const user = await User.findById(userId)
-      .select("full_name email headquarter_name phone_number")
+      .select("full_name email headquarter_name phone_number profile_image")
 
     if (!user) {
       return res.status(404).json({ status: 404, message: "User not found" });
@@ -238,6 +256,7 @@ const getUserDetails = async (req, res) => {
         email: user.email,
         headquarter_name: user.headquarter_name,
         phone_number: user.phone_number,
+        profile_image: user.profile_image,
         check_in_time,
         vendor_visits,
         total_allowance,
@@ -545,4 +564,31 @@ const getAttendanceList = async (req, res) => {
   }
 };
 
-module.exports = { register, login, updateProfile, getDailyAllowanceByUser, getUserDetails, forgotPassword, verifyOtp, resetPassword, getTeamProfiles, getEmployeeList, getAttendanceList };
+// @desc    Upload/update profile image only
+// @route   PUT /api/users/profile-image
+const uploadProfileImage = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not found" });
+    }
+
+    if (!req.files || !req.files.profile_image || req.files.profile_image.length === 0) {
+      return res.status(400).json({ status: 400, message: "Profile image is required" });
+    }
+
+    const file = req.files.profile_image[0];
+    user.profile_image = await uploadToS3(file.buffer, file.originalname, file.mimetype, "profiles");
+    await user.save();
+
+    res.status(200).json({
+      status: 200,
+      message: "Profile image uploaded successfully",
+      profile_image: user.profile_image,
+    });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
+module.exports = { register, login, updateProfile, getDailyAllowanceByUser, getUserDetails, forgotPassword, verifyOtp, resetPassword, getTeamProfiles, getEmployeeList, getAttendanceList, uploadProfileImage };

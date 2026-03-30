@@ -38,6 +38,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Password is required"],
     },
+    profile_image: {
+      type: String,
+      default: null,
+    },
     otp: {
       type: String,
       default: null,
