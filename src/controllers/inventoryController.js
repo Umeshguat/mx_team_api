@@ -69,7 +69,10 @@ const getAllProducts = async (req, res) => {
       ];
     }
 
-    const products = await InventoryProduct.find(filter).sort({ product_name: 1 });
+    const products = await InventoryProduct.find(filter)
+    .populate("brand", "brand_name")
+    .populate("category", "category_name")
+    .sort({ product_name: 1 });
 
     res.json({ status: 200, count: products.length, products });
   } catch (error) {
@@ -81,7 +84,9 @@ const getAllProducts = async (req, res) => {
 // @route   GET /api/inventory/products/:id
 const getProductById = async (req, res) => {
   try {
-    const product = await InventoryProduct.findById(req.params.id);
+    const product = await InventoryProduct.findById(req.params.id)
+      .populate("brand", "brand_name")
+      .populate("category", "category_name");
     if (!product) {
       return res
         .status(404)
@@ -382,7 +387,9 @@ const adjustStock = async (req, res) => {
 // @route   GET /api/inventory/alerts/low-stock
 const getLowStockAlerts = async (req, res) => {
   try {
-    const products = await InventoryProduct.find({ is_active: true });
+    const products = await InventoryProduct.find({ is_active: true })
+      .populate("brand", "brand_name")
+      .populate("category", "category_name");
 
     const lowStockProducts = products
       .filter((p) => p.isLowStock())
@@ -412,7 +419,9 @@ const getLowStockAlerts = async (req, res) => {
 const getNearExpiryAlerts = async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
-    const products = await InventoryProduct.find({ is_active: true });
+    const products = await InventoryProduct.find({ is_active: true })
+      .populate("brand", "brand_name")
+      .populate("category", "category_name");
 
     const alerts = [];
 
@@ -443,7 +452,9 @@ const getNearExpiryAlerts = async (req, res) => {
 // @route   GET /api/inventory/reports/stock-aging
 const getStockAgingReport = async (req, res) => {
   try {
-    const products = await InventoryProduct.find({ is_active: true });
+    const products = await InventoryProduct.find({ is_active: true })
+      .populate("brand", "brand_name")
+      .populate("category", "category_name");
 
     const report = products.map((product) => {
       const batchStatuses = product.getBatchExpiryStatus();
@@ -492,7 +503,9 @@ const getStockAgingReport = async (req, res) => {
 // @route   GET /api/inventory/dashboard
 const getInventoryDashboard = async (req, res) => {
   try {
-    const products = await InventoryProduct.find({ is_active: true });
+    const products = await InventoryProduct.find({ is_active: true })
+      .populate("brand", "brand_name")
+      .populate("category", "category_name");
 
     const totalProducts = products.length;
     const totalSKUs = products.length;
@@ -519,12 +532,13 @@ const getInventoryDashboard = async (req, res) => {
       });
 
       // Brand-wise summary
-      if (!brandWise[product.brand]) {
-        brandWise[product.brand] = { products: 0, total_quantity: 0, value: 0 };
+      const brandName = product.brand ? product.brand.brand_name : "Unknown";
+      if (!brandWise[brandName]) {
+        brandWise[brandName] = { products: 0, total_quantity: 0, value: 0 };
       }
-      brandWise[product.brand].products++;
-      brandWise[product.brand].total_quantity += product.total_quantity;
-      brandWise[product.brand].value +=
+      brandWise[brandName].products++;
+      brandWise[brandName].total_quantity += product.total_quantity;
+      brandWise[brandName].value +=
         product.total_quantity * product.selling_price;
     });
 

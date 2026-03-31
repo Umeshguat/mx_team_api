@@ -22,6 +22,20 @@ const {
   updateAllowance,
   deleteAllowance,
 } = require("../controllers/allowanceController");
+const {
+  createBrand,
+  getBrands,
+  getBrandById,
+  updateBrand,
+  deleteBrand,
+} = require("../controllers/brandController");
+const {
+  createCategory,
+  getCategories,
+  getCategoryById,
+  updateCategory,
+  deleteCategory,
+} = require("../controllers/categoryController");
 
 // All admin routes require authentication + admin role
 router.use(protect, isAdmin);
@@ -45,5 +59,21 @@ router
   .get(getAllowanceById)
   .put(updateAllowance)
   .delete(deleteAllowance);
+
+// Category routes
+router.route("/categories").get(getCategories).post(createCategory);
+router
+  .route("/categories/:id")
+  .get(getCategoryById)
+  .put(updateCategory)
+  .delete(deleteCategory);
+
+// Brand routes
+router.route("/brands").get(getBrands).post(createBrand);
+router
+  .route("/brands/:id")
+  .get(getBrandById)
+  .put(updateBrand)
+  .delete(deleteBrand);
 
 module.exports = router;

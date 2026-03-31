@@ -47,14 +47,14 @@ const inventoryProductSchema = new mongoose.Schema(
       trim: true,
     },
     brand: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "BrandMaster",
       required: [true, "Brand is required"],
-      trim: true,
     },
     category: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CategoryMaster",
       required: [true, "Category is required"],
-      trim: true,
     },
     description: {
       type: String,
