@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
     designation_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "DesignationMaster",
-      required: [false, "Designation ID is required"],
+      required: [true, "Designation ID is required"],
     },
     headquarter_name: {
       type: String,
