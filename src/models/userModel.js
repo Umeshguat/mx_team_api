@@ -18,12 +18,17 @@ const userSchema = new mongoose.Schema(
     role_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "RoleMaster",
-      required: [false, "Role ID is required"],
+      required: [true, "Role ID is required"],
     },
     designation_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "DesignationMaster",
-      required: [true, "Designation ID is required"],
+      required: [false, "Designation ID is required"],
+    },
+    distributor_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: [false, "Distributor ID is required"],
     },
     headquarter_name: {
       type: String,

@@ -86,7 +86,7 @@ const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    res.json({
+    const data = {
       _id: user._id,
       full_name: user.full_name,
       email: user.email,
@@ -97,11 +97,20 @@ const login = async (req, res) => {
       headquarter_name: user.headquarter_name,
       phone_number: user.phone_number,
       profile_image: user.profile_image,
-      token: generateToken(user._id),
+      distributor_id: user.distributor_id,
+      distributor_name: user.distributor_id ? (await User.findById(user.distributor_id)).full_name : null,
+      distributor_mobile: user.distributor_id ? (await User.findById(user.distributor_id)).phone_number : null,
+      token: generateToken(user._id)
+    };
+
+    res.status(200).json({
+      status: 200,
+      message: "Login successful",
+      data,
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: 500, message: error.message });
   }
 };
 
@@ -242,10 +251,10 @@ const getUserDetails = async (req, res) => {
     const total_allowance =
       allowanceResult.length > 0
         ? allowanceResult[0].total_km_price +
-          allowanceResult[0].total_food +
-          allowanceResult[0].total_stay +
-          allowanceResult[0].total_other +
-          allowanceResult[0].total_daily
+        allowanceResult[0].total_food +
+        allowanceResult[0].total_stay +
+        allowanceResult[0].total_other +
+        allowanceResult[0].total_daily
         : 0;
 
     res.status(200).json({
