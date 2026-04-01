@@ -5,7 +5,7 @@ const shopMasterSchema = new mongoose.Schema(
     distributor_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "Distributor ID is required"],
+      required: [false, "Distributor ID is required"],
     },
     shop_name: {
       type: String,
