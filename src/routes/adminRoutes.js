@@ -36,14 +36,6 @@ const {
   updateCategory,
   deleteCategory,
 } = require("../controllers/categoryController");
-const {
-  createShop,
-  getShops,
-  getShopById,
-  updateShop,
-  deleteShop,
-} = require("../controllers/shopMasterController");
-
 // All admin routes require authentication + admin role
 router.use(protect, isAdmin);
 
@@ -82,13 +74,5 @@ router
   .get(getBrandById)
   .put(updateBrand)
   .delete(deleteBrand);
-
-// Shop routes
-router.route("/shops").get(getShops).post(createShop);
-router
-  .route("/shops/:id")
-  .get(getShopById)
-  .put(updateShop)
-  .delete(deleteShop);
 
 module.exports = router;

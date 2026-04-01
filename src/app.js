@@ -9,6 +9,7 @@ const inventoryRoutes = require("./routes/inventoryRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const paymentCreditRoutes = require("./routes/paymentCreditRoutes");
 const deliveryRoutes = require("./routes/deliveryRoutes");
+const shopRoutes = require("./routes/shopRoutes");
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api/inventory", inventoryRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/payment-credits", paymentCreditRoutes);
 app.use("/api/deliveries", deliveryRoutes);
+app.use("/api/shops", shopRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Salesmen API is running" });
