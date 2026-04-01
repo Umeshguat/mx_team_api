@@ -77,11 +77,6 @@ const orderSchema = new mongoose.Schema(
       required: [true, "Subtotal is required"],
       min: [0, "Subtotal cannot be negative"],
     },
-    discount: {
-      type: Number,
-      default: 0,
-      min: [0, "Discount cannot be negative"],
-    },
     tax: {
       type: Number,
       default: 0,
@@ -111,15 +106,6 @@ const orderSchema = new mongoose.Schema(
       },
       default: "unpaid",
     },
-    payment_mode: {
-      type: String,
-      enum: {
-        values: ["cash", "upi", "bank_transfer", "cheque", "credit"],
-        message:
-          "Payment mode must be cash, upi, bank_transfer, cheque, or credit",
-      },
-      default: "cash",
-    },
     note: {
       type: String,
       trim: true,
@@ -130,6 +116,16 @@ const orderSchema = new mongoose.Schema(
       default: Date.now,
     },
     delivery_address: {
+      shop_name: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+      shop_mobile: {
+        type: String,
+        trim: true,
+        default: "",
+      },
       address: {
         type: String,
         trim: true,
@@ -187,7 +183,7 @@ orderSchema.index({ "delivery_address.location": "2dsphere" });
 // Calculate subtotal from items
 orderSchema.methods.calculateTotals = function () {
   this.subtotal = this.items.reduce((sum, item) => sum + item.total_price, 0);
-  this.grand_total = this.subtotal - this.discount + this.tax;
+  this.grand_total = this.subtotal + this.tax;
   return this.grand_total;
 };
 

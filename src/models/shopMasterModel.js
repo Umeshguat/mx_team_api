@@ -31,6 +31,11 @@ const shopMasterSchema = new mongoose.Schema(
       required: [true, "City is required"],
       trim: true,
     },
+    pincode: {
+      type: String,
+      required: [true, "Pincode is required"],
+      trim: true,
+    },
     latitude: {
       type: Number,
       required: [true, "Latitude is required"],

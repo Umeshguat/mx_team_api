@@ -4,6 +4,7 @@ const InventoryTransaction = require("../models/inventoryTransactionModel");
 const PaymentCredit = require("../models/paymentCreditModel");
 const User = require("../models/userModel");
 const Delivery = require("../models/deliveryModel");
+const ShopMaster = require("../models/shopMasterModel");
 
 // Helper: find user by city (headquarter_name matches delivery city)
 const findUserByCity = async (city) => {
@@ -39,9 +40,7 @@ const createOrder = async (req, res) => {
       vendor_mobile,
       vendor_address,
       items,
-      discount,
       tax,
-      payment_mode,
       note,
       delivery_address,
     } = req.body;
@@ -91,7 +90,7 @@ const createOrder = async (req, res) => {
     }
 
     const subtotal = orderItems.reduce((sum, item) => sum + item.total_price, 0);
-    const grand_total = subtotal - (discount || 0) + (tax || 0);
+    const grand_total = subtotal + (tax || 0);
     const order_number = await generateOrderNumber();
 
     // Auto-assign user based on delivery address city
@@ -107,10 +106,8 @@ const createOrder = async (req, res) => {
       vendor_address: vendor_address || "",
       items: orderItems,
       subtotal,
-      discount: discount || 0,
       tax: tax || 0,
       grand_total,
-      payment_mode: payment_mode || "cash",
       note: note || "",
       delivery_address: delivery_address || {},
       assigned_to: assignedUser ? assignedUser._id : null,
@@ -129,38 +126,24 @@ const createOrder = async (req, res) => {
       });
     }
 
-    // Auto-create PaymentCredit if payment_mode is "credit"
-    if (payment_mode === "credit") {
-      const invoicePrefix = `INV-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, "0")}${String(new Date().getDate()).padStart(2, "0")}`;
-      const invStart = new Date();
-      invStart.setHours(0, 0, 0, 0);
-      const invEnd = new Date();
-      invEnd.setHours(23, 59, 59, 999);
-      const invCount = await PaymentCredit.countDocuments({
-        createdAt: { $gte: invStart, $lte: invEnd },
+    // Save shop detail in ShopMaster if delivery_address has shop info
+    if (delivery_address && delivery_address.shop_name && delivery_address.shop_mobile) {
+      const existingShop = await ShopMaster.findOne({
+        shop_mobile: delivery_address.shop_mobile,
       });
-      const invoice_number = `${invoicePrefix}-${String(invCount + 1).padStart(4, "0")}`;
-
-      // Default due date: 30 days from now
-      const defaultDueDate = new Date();
-      defaultDueDate.setDate(defaultDueDate.getDate() + 30);
-
-      await PaymentCredit.create({
-        vendor_name,
-        vendor_mobile: vendor_mobile || "",
-        order_id: order._id,
-        invoice_number,
-        total_amount: grand_total,
-        paid_amount: 0,
-        payment_mode: "cash",
-        due_date: req.body.due_date || defaultDueDate,
-        note: `Auto-created credit for order ${order_number}`,
-        created_by: req.user._id,
-      });
-
-      // Mark order payment status as unpaid (credit)
-      order.payment_status = "unpaid";
-      await order.save();
+      if (!existingShop) {
+        await ShopMaster.create({
+          distributor_id: req.user._id,
+          shop_name: delivery_address.shop_name,
+          shop_mobile: delivery_address.shop_mobile,
+          shop_address: delivery_address.address || "",
+          state: delivery_address.state || "",
+          city: delivery_address.city || "",
+          pincode: delivery_address.pincode || "",
+          latitude: delivery_address.location?.coordinates?.[1] || 0,
+          longitude: delivery_address.location?.coordinates?.[0] || 0,
+        });
+      }
     }
 
     // Deduct stock using FIFO for each item
@@ -329,9 +312,7 @@ const updateOrder = async (req, res) => {
       vendor_mobile,
       vendor_address,
       delivery_address,
-      discount,
       tax,
-      payment_mode,
       note,
     } = req.body;
 
@@ -339,12 +320,15 @@ const updateOrder = async (req, res) => {
     if (vendor_mobile !== undefined) order.vendor_mobile = vendor_mobile;
     if (vendor_address !== undefined) order.vendor_address = vendor_address;
     if (note !== undefined) order.note = note;
-    if (payment_mode !== undefined) order.payment_mode = payment_mode;
 
     let reassignedUser = null;
     let cityChanged = false;
 
     if (delivery_address !== undefined) {
+      if (delivery_address.shop_name !== undefined)
+        order.delivery_address.shop_name = delivery_address.shop_name;
+      if (delivery_address.shop_mobile !== undefined)
+        order.delivery_address.shop_mobile = delivery_address.shop_mobile;
       if (delivery_address.address !== undefined)
         order.delivery_address.address = delivery_address.address;
       if (delivery_address.city !== undefined) {
@@ -391,10 +375,9 @@ const updateOrder = async (req, res) => {
       }
     }
 
-    if (discount !== undefined || tax !== undefined) {
-      if (discount !== undefined) order.discount = discount;
-      if (tax !== undefined) order.tax = tax;
-      order.grand_total = order.subtotal - order.discount + order.tax;
+    if (tax !== undefined) {
+      order.tax = tax;
+      order.grand_total = order.subtotal + order.tax;
     }
 
     await order.save();
