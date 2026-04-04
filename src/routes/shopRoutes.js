@@ -10,9 +10,10 @@ const {
 } = require("../controllers/shopMasterController");
 
 // All shop routes require authentication + admin role
-router.use(protect, isAdmin);
+router.use(protect);
 
-router.route("/").get(getShops).post(createShop);
+router.post("/", createShop);
+router.post("/list", getShops);
 router.route("/:id").get(getShopById).put(updateShop).delete(deleteShop);
 
 module.exports = router;

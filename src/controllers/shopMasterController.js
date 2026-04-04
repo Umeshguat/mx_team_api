@@ -29,7 +29,15 @@ const createShop = async (req, res) => {
 // @route   GET /api/admin/shops
 const getShops = async (req, res) => {
   try {
-    const shops = await ShopMaster.find().sort({ createdAt: -1 });
+    const { search } = req.body;
+    const filter = {};
+    if (search) {
+      filter.$or = [
+        { shop_name: { $regex: search, $options: "i" } },
+        { shop_mobile: { $regex: search, $options: "i" } },
+      ];
+    }
+    const shops = await ShopMaster.find(filter).sort({ createdAt: -1 });
     res.status(200).json({
       status: 200,
       message: "Shops retrieved successfully",
