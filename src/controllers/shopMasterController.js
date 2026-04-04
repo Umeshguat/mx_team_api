@@ -129,4 +129,38 @@ const deleteShop = async (req, res) => {
   }
 };
 
-module.exports = { createShop, getShops, getShopById, updateShop, deleteShop };
+// @desc    Search shop by name or mobile number (returns one)
+// @route   GET /api/admin/shops/search?search=keyword
+const searchShop = async (req, res) => {
+  try {
+    const { keyword } = req.query;
+
+    if (!keyword) {
+      return res.status(400).json({
+        status: 400,
+        message: "Please provide search keyword",
+      });
+    }
+
+    const shop = await ShopMaster.findOne({
+      $or: [
+        { shop_name: { $regex: keyword, $options: "i" } },
+        { shop_mobile: { $regex: keyword, $options: "i" } },
+      ],
+    });
+
+    if (!shop) {
+      return res.status(404).json({ status: 404, message: "Shop not found" });
+    }
+
+    res.status(200).json({
+      status: 200,
+      message: "Shop retrieved successfully",
+      data: shop,
+    });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
+module.exports = { createShop, getShops, getShopById, updateShop, deleteShop, searchShop };
