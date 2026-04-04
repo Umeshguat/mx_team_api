@@ -25,11 +25,15 @@ const createShop = async (req, res) => {
   }
 };
 
-// @desc    Get all shops
-// @route   GET /api/admin/shops
+// @desc    Get all shops with pagination
+// @route   GET /api/admin/shops/list
 const getShops = async (req, res) => {
   try {
-    const { search } = req.body;
+    const { search, page = 1, limit = 10 } = req.query;
+    const pageNum = Math.max(parseInt(page), 1);
+    const limitNum = Math.max(parseInt(limit), 1);
+    const skip = (pageNum - 1) * limitNum;
+
     const filter = {};
     if (search) {
       filter.$or = [
@@ -37,11 +41,22 @@ const getShops = async (req, res) => {
         { shop_mobile: { $regex: search, $options: "i" } },
       ];
     }
-    const shops = await ShopMaster.find(filter).sort({ createdAt: -1 });
+
+    const [shops, total] = await Promise.all([
+      ShopMaster.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limitNum),
+      ShopMaster.countDocuments(filter),
+    ]);
+
     res.status(200).json({
       status: 200,
       message: "Shops retrieved successfully",
       data: shops,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      },
     });
   } catch (error) {
     res.status(500).json({ status: 500, message: error.message });

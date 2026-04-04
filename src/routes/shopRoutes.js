@@ -13,7 +13,7 @@ const {
 router.use(protect);
 
 router.post("/", createShop);
-router.post("/list", getShops);
+router.get("/list", getShops);
 router.route("/:id").get(getShopById).put(updateShop).delete(deleteShop);
 
 module.exports = router;
