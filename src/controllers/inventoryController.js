@@ -70,9 +70,9 @@ const getAllProducts = async (req, res) => {
     }
 
     const products = await InventoryProduct.find(filter)
-    .populate("brand", "brand_name")
-    .populate("category", "category_name")
-    .sort({ product_name: 1 });
+      .populate("brand", "brand_name")
+      .populate("category", "category_name")
+      .sort({ product_name: 1 });
 
     res.json({ status: 200, count: products.length, products });
   } catch (error) {
@@ -493,7 +493,11 @@ const getStockAgingReport = async (req, res) => {
       };
     });
 
-    res.json({ status: 200, report });
+    res.json({
+      status: 200,
+      message: "Stock aging report generated successfully",
+      report
+    });
   } catch (error) {
     res.status(500).json({ status: 500, message: error.message });
   }
