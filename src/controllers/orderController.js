@@ -5,12 +5,16 @@ const PaymentCredit = require("../models/paymentCreditModel");
 const User = require("../models/userModel");
 const Delivery = require("../models/deliveryModel");
 const ShopMaster = require("../models/shopMasterModel");
+const RoleMaster = require("../models/roleMasterModel");
 
 // Helper: find user by city (headquarter_name matches delivery city)
 const findUserByCity = async (city) => {
   if (!city) return null;
+
+  const role = await RoleMaster.findOne({ role_name: "Delivery Agent" });
   const user = await User.findOne({
     headquarter_name: { $regex: `^${city}$`, $options: "i" },
+    role_id: role._id,
   });
   return user;
 };
