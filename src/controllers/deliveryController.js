@@ -1,5 +1,7 @@
 const Delivery = require("../models/deliveryModel");
 const Order = require("../models/orderModel");
+const User = require("../models/userModel");
+const RoleMaster = require("../models/roleMasterModel");
 
 // @desc    Assign delivery to employee
 // @route   POST /api/deliveries
@@ -346,7 +348,48 @@ const deleteDelivery = async (req, res) => {
   }
 };
 
+// @desc    Get sales list for delivered orders
+// @route   GET /api/deliveries/sales/list
+const getSaleslist = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+     
+    const roleIds = await RoleMaster.find({ role_name: { $in: ["Delivery Agent"] } }).distinct("_id");
+    
+
+    const filter = {
+      // distributor_id: req.user._id,
+      role_id: { $in: roleIds },
+    };
+
+    const [salesList, total] = await Promise.all([
+      User.find(filter)
+        .select("full_name email phone_number headquarter_name")
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      User.countDocuments(filter),
+    ]);
+
+    res.json({
+      status: 200,
+      message: "Sales list retrieved successfully",
+      sales: salesList,
+      count: salesList.length,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+}
+
 module.exports = {
+  getSaleslist,
   createDelivery,
   getAllDeliveries,
   getMyDeliveries,

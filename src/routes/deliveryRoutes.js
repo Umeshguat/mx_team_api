@@ -9,6 +9,7 @@ const {
   updateDelivery,
   updateDeliveryStatus,
   deleteDelivery,
+  getSaleslist,
 } = require("../controllers/deliveryController");
 
 const router = express.Router();
@@ -20,6 +21,9 @@ router.use(protect);
 router.get("/dashboard", getDashboardData);
 // My deliveries (logged-in employee)
 router.post("/my-deliveries", getMyDeliveries);
+
+// Sales list (must be defined before "/:id" to avoid route conflict)
+router.get("/sales/list", getSaleslist);
 
 // Delivery CRUD
 router.route("/").get(getAllDeliveries).post(createDelivery);
