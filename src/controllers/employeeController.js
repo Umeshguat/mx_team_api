@@ -196,10 +196,27 @@ const listEmployeesByRole = (roleName) => async (req, res) => {
 const listSalesEmployees = listEmployeesByRole("Sales");
 const listDeliveryEmployees = listEmployeesByRole("Delivery Agent");
 
+// @desc    Delete employee
+// @route   DELETE /api/employees/:id
+const deleteEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "Employee not found" });
+    }
+    await user.deleteOne();
+    res.status(200).json({ status: 200, message: "Employee deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
 module.exports = {
   addSalesEmployee,
   addDeliveryEmployee,
   updateEmployee,
   listSalesEmployees,
   listDeliveryEmployees,
+  deleteEmployee,
 };
