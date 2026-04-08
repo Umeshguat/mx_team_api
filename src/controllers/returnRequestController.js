@@ -97,6 +97,31 @@ const getReturnRequestsForDistributor = async (req, res) => {
     }
 };
 
+// @desc    Get a single return request by ID
+// @route   GET /api/return-requests/:id
+const getReturnRequestById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const returnRequest = await ReturnRequest.findById(id)
+            .populate('product_id')
+            .populate('sales_person_id')
+            .populate('delivery_agent_id');
+
+        if (!returnRequest) {
+            return res.status(404).json({ status: 404, message: "Return request not found" });
+        }
+
+        res.status(200).json({
+            status: 200,
+            message: "Return request fetched successfully",
+            data: returnRequest,
+        });
+    } catch (error) {
+        res.status(500).json({ status: 500, message: error.message });
+    }
+};
+
 // @desc    Update return request status by distributor; auto-assign delivery agent if approved
 // @route   PUT /api/return-requests/:id/status
 const updateReturnRequestStatus = async (req, res) => {
@@ -296,4 +321,5 @@ module.exports = {
     updateReturnRequestStatus,
     receiveReturnedProduct,
     completeRefund,
+    getReturnRequestById,
 };
