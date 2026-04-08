@@ -23,6 +23,11 @@ const returnRequestSchema = new mongoose.Schema(
       type: String,
       required: [false, "Reason is required"],
     },
+    unit: {
+      type: String,
+      required: [true, "Unit is required"],
+      trim: true,
+    },
     status: {
       type: String,
       enum: ["requested", "approved", "rejected"],
@@ -35,6 +40,11 @@ const returnRequestSchema = new mongoose.Schema(
     pickup_date: {
       type: Date,
       required: [false, "Pickup date is required"],
+    },
+    qc_status: {
+      type: String,
+      enum: ["pending", "passed", "failed"],
+      default: "pending",
     },
     refund_amount: {
       type: Number,
@@ -57,4 +67,4 @@ const returnRequestSchema = new mongoose.Schema(
 
 const ReturnRequest = mongoose.model("ReturnRequest", returnRequestSchema);
 
-module.exports = User;
+module.exports = ReturnRequest;
