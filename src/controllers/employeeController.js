@@ -210,7 +210,31 @@ const deleteEmployee = async (req, res) => {
   }
 };
 
+
+const getEmployeebyId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const employee = await User.findById(id).select("-password").populate("role_id", "role_name");
+    if (!employee) {
+      return res.status(404).json({ status: 404, message: "Employee not found" });
+    }
+    res.status(200).json({
+      status: 200,
+      message: "Employee fetched successfully",
+      data: employee,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: error.message
+    });
+  }
+}
+
+
 module.exports = {
+  getEmployeebyId,
   addSalesEmployee,
   addDeliveryEmployee,
   updateEmployee,

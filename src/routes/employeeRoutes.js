@@ -6,6 +6,7 @@ const {
   listSalesEmployees,
   listDeliveryEmployees,
   deleteEmployee,
+  getEmployeebyId,
 } = require("../controllers/employeeController");
 const { protect } = require("../middleware/authMiddleware");
 const { uploadFields } = require("../middleware/uploadMiddleware");
@@ -31,5 +32,7 @@ router.put("/:id", protect, profileImageUpload, updateEmployee);
 
 // Delete employee
 router.delete("/:id", protect, deleteEmployee);
+//get employee by id
+router.get("/:id", protect, getEmployeebyId);
 
 module.exports = router;
