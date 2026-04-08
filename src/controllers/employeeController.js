@@ -168,8 +168,6 @@ const listEmployeesByRole = (roleName) => async (req, res) => {
       User.find(filter)
         .select("-password")
         .populate("role_id", "role_name")
-        .populate("designation_id")
-        .populate("distributor_id")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
