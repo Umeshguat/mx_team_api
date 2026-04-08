@@ -43,6 +43,11 @@ const shopMasterSchema = new mongoose.Schema(
     longitude: {
       type: Number,
       required: [true, "Longitude is required"],
+    },
+    credit_balance: {
+      type: Number,
+      default: 0,
+      min: [0, "Credit balance cannot be negative"],
     }
   },
   {

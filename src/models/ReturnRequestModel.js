@@ -4,19 +4,19 @@ const bcrypt = require("bcryptjs");
 const returnRequestSchema = new mongoose.Schema(
   {
     order_id: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Order",
       required: [true, "Order ID is required"],
       trim: true,
     },
     sales_person_id: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: [true, "Sales person ID is required"],
-      trim: true,
-      lowercase: true,
     },
     product_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
+      ref: "InventoryProduct",
       required: [true, "Product ID is required"],
     },
     reason: {
@@ -53,9 +53,14 @@ const returnRequestSchema = new mongoose.Schema(
     },
     refund_status: {
       type: String,
-      enum: ["pending", "processed"],
+      enum: ["pending", "processed","completed"],
       default: "pending",
-    }
+    },
+    delivery_agent_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   {
     timestamps: true,

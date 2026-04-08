@@ -1,12 +1,16 @@
 const express = require("express");
 const { protect } = require("../middleware/authMiddleware");
-const { createReturnRequest } = require("../controllers/returnRequestController");
+const { createReturnRequest, getReturnRequestsForDistributor, updateReturnRequestStatus, receiveReturnedProduct, completeRefund } = require("../controllers/returnRequestController");
 
 const router = express.Router();
 
 
 router.use(protect);
 
+router.get("/distributor", getReturnRequestsForDistributor);
+router.put("/:id/status", updateReturnRequestStatus);
+router.put("/:id/receive", receiveReturnedProduct);
+router.put("/:id/complete-refund", completeRefund);
 router.post("/", createReturnRequest);
 
 module.exports = router;
