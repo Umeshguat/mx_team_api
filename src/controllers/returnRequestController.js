@@ -13,10 +13,10 @@ const createReturnRequest = async (req, res) => {
 
         // Validate required fields
         if (!order_id || !sales_person_id || !product_id || !unit) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 status: 400,
                 message: "Order ID, Sales person ID, Product ID and Unit are required"
-                });
+            });
         }
 
         const newReturnRequest = new ReturnRequest({
@@ -35,10 +35,10 @@ const createReturnRequest = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ 
-            status:500,
+        res.status(500).json({
+            status: 500,
             message: error.message,
-         });
+        });
     }
 };
 
@@ -56,13 +56,13 @@ const getReturnRequestsForDistributor = async (req, res) => {
         // Find all salespersons belonging to this distributor
         const user_id = req.user._id;
         const salespersons = await User.find(
-            {  distributor_id: user_id },
+            { distributor_id: user_id },
 
         );
 
 
         const salespersonIds = salespersons.map((s) => s._id);
-         console.log(`salespersonIds: ${salespersonIds}`);
+        console.log(`salespersonIds: ${salespersonIds}`);
 
         const filter = { sales_person_id: { $in: salespersonIds } };
         if (status) filter.status = status;
@@ -192,10 +192,8 @@ const updateReturnRequestStatus = async (req, res) => {
         // Verify the order belongs to this distributor
         const order = await Order.findOne({
             $or: [
-                { _id: returnRequest.order_id.match(/^[0-9a-fA-F]{24}$/) ? returnRequest.order_id : null },
-                { order_number: returnRequest.order_id },
-            ],
-            created_by: req.user._id,
+                { _id: returnRequest.order_id }
+            ]
         });
 
         if (!order) {
