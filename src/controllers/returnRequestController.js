@@ -151,10 +151,19 @@ const getReturnRequestById = async (req, res) => {
             return res.status(404).json({ status: 404, message: "Return request not found" });
         }
 
+        const data = returnRequest.toObject();
+
+        // Remove all ID fields
+        delete data._id;
+        delete data.order_id;
+        delete data.sales_person_id?._id;
+        delete data.product_id?._id;
+        delete data.delivery_agent_id?._id;
+
         res.status(200).json({
             status: 200,
             message: "Return request fetched successfully",
-            data: returnRequest,
+            data,
         });
     } catch (error) {
         res.status(500).json({ status: 500, message: error.message });
