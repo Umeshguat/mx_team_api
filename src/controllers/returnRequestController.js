@@ -361,6 +361,44 @@ const completeRefund = async (req, res) => {
     }
 };
 
+
+const getReturnRequestsForDeliveryPerson = async (req, res) => {
+    try {
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+        const limit = Math.max(parseInt(req.query.limit) || 10, 1);
+        const skip = (page - 1) * limit;
+        const { status, qc_status, refund_status } = req.query;
+
+        const filter = { delivery_agent_id: req.user._id };
+        if (status) filter.status = status;
+        if (qc_status) filter.qc_status = qc_status;
+        if (refund_status) filter.refund_status = refund_status;
+
+        const [returnRequests, total] = await Promise.all([
+            ReturnRequest.find(filter)
+                .populate('product_id')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+            ReturnRequest.countDocuments(filter),
+        ]);
+
+        res.status(200).json({
+            status: 200,
+            message: "Return requests fetched successfully",
+            data: returnRequests,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
+        });
+    } catch (error) {
+        res.status(500).json({ status: 500, message: error.message });
+    }
+};
+
 module.exports = {
     createReturnRequest,
     getReturnRequestsForDistributor,
@@ -369,4 +407,5 @@ module.exports = {
     completeRefund,
     getReturnRequestById,
     getReturnRequestsForSalesperson,
+    getReturnRequestsForDeliveryPerson,
 };
