@@ -143,9 +143,8 @@ const getReturnRequestById = async (req, res) => {
         const { id } = req.params;
 
         const returnRequest = await ReturnRequest.findById(id)
-            .populate('product_id')
-            .populate('sales_person_id')
-            .populate('delivery_agent_id');
+            .populate('product_id', 'product_name product_code')
+                .populate('order_id', 'order_number vendor_name vendor_mobile, delivery_address');
 
         if (!returnRequest) {
             return res.status(404).json({ status: 404, message: "Return request not found" });
@@ -155,8 +154,7 @@ const getReturnRequestById = async (req, res) => {
 
         // Remove all ID fields
         delete data._id;
-        delete data.order_id;
-        delete data.sales_person_id?._id;
+        delete data.sales_person_id;
         delete data.product_id?._id;
         delete data.delivery_agent_id?._id;
 
