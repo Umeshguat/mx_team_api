@@ -376,7 +376,8 @@ const getReturnRequestsForDeliveryPerson = async (req, res) => {
 
         const [returnRequests, total] = await Promise.all([
             ReturnRequest.find(filter)
-                .populate('product_id')
+                .populate('product_id', 'product_name product_code')
+                .populate('order_id', 'order_number vendor_name vendor_mobile, delivery_address')
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit),

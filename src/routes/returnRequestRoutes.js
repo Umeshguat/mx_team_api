@@ -11,7 +11,7 @@ router.use(protect);
 
 router.get("/distributor", getReturnRequestsForDistributor);
 router.get("/sales", getReturnRequestsForSalesperson);
-router.get("/delivery", getReturnRequestsForDeliveryPerson);
+router.get("/pickup", getReturnRequestsForDeliveryPerson);
 router.get("/:id", getReturnRequestById);
 router.put("/:id/status", updateReturnRequestStatus);
 router.put("/:id/receive", receiveReturnedProduct);
