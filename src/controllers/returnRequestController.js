@@ -398,6 +398,29 @@ const getReturnRequestsForDeliveryPerson = async (req, res) => {
     }
 };
 
+const getPickupByID = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const returnRequest = await ReturnRequest.findOne({
+            _id: id,
+            delivery_agent_id: req.user._id,
+        })
+            .populate('product_id', 'product_name product_code')
+            .populate('order_id', 'order_number vendor_name vendor_mobile, delivery_address');
+        if (!returnRequest) {
+            return res.status(404).json({ status: 404, message: "Pickup not found" });
+        }
+        res.status(200).json({
+            status: 200,
+            message: "Pickup fetched successfully",
+            data: returnRequest,
+        });
+    }
+    catch (error) {
+        res.status(500).json({ status: 500, message: error.message });
+    }
+}
+
 module.exports = {
     createReturnRequest,
     getReturnRequestsForDistributor,
@@ -407,4 +430,5 @@ module.exports = {
     getReturnRequestById,
     getReturnRequestsForSalesperson,
     getReturnRequestsForDeliveryPerson,
+    getPickupByID,
 };
