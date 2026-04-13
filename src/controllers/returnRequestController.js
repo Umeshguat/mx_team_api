@@ -168,17 +168,23 @@ const getReturnRequestById = async (req, res) => {
     }
 };
 
-// @desc    Update return request status by distributor; auto-assign delivery agent if approved
+// @desc    Update return request status; handles full flow based on status & qc_status
 // @route   PUT /api/return-requests/:id/status
+//
+// Allowed transitions:
+//   requested  → approved | rejected       (distributor)
+//   approved   → picked_up                 (delivery agent)
+//   picked_up  → received  (+ qc_status)   (delivery agent)
 const updateReturnRequestStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const { status } = req.body;
+        const { status, qc_status, quality_check_description } = req.body;
 
-        if (!status || !["requested", "approved", "rejected"].includes(status)) {
+        const validStatuses = ["approved", "rejected", "picked_up", "received"];
+        if (!status || !validStatuses.includes(status)) {
             return res.status(400).json({
                 status: 400,
-                message: "Valid status is required (requested, approved, rejected)",
+                message: `Valid status is required (${validStatuses.join(", ")})`,
             });
         }
 
@@ -187,27 +193,104 @@ const updateReturnRequestStatus = async (req, res) => {
             return res.status(404).json({ status: 404, message: "Return request not found" });
         }
 
-        // Verify the order belongs to this distributor
-        const order = await Order.findOne({
-            $or: [
-                { _id: returnRequest.order_id }
-            ]
-        });
+        // Define allowed transitions
+        const allowedTransitions = {
+            requested: ["approved", "rejected"],
+            approved: ["picked_up"],
+            picked_up: ["received"],
+        };
 
-        if (!order) {
-            return res.status(403).json({
-                status: 403,
-                message: "Not authorized to update this return request",
+        const currentStatus = returnRequest.status;
+        const allowed = allowedTransitions[currentStatus];
+        if (!allowed || !allowed.includes(status)) {
+            return res.status(400).json({
+                status: 400,
+                message: `Cannot transition from '${currentStatus}' to '${status}'. Allowed: ${(allowed || []).join(", ") || "none"}`,
             });
         }
 
-        returnRequest.status = status;
+        // ── approved / rejected (distributor action) ──
+        if (status === "approved" || status === "rejected") {
+            const order = await Order.findById(returnRequest.order_id);
+            if (!order) {
+                return res.status(404).json({ status: 404, message: "Related order not found" });
+            }
 
-        if (status === "approved") {
-            // Find the delivery to get the agent who delivered the order
-            const delivery = await Delivery.findOne({ order_id: order._id });
-            if (delivery && delivery.assigned_to) {
-                returnRequest.delivery_agent_id = delivery.assigned_to;
+            returnRequest.status = status;
+
+            if (status === "approved") {
+                const delivery = await Delivery.findOne({ order_id: order._id });
+                if (delivery && delivery.assigned_to) {
+                    returnRequest.delivery_agent_id = delivery.assigned_to;
+                }
+            }
+        }
+
+        // ── picked_up (delivery agent action) ──
+        if (status === "picked_up") {
+            if (
+                !returnRequest.delivery_agent_id ||
+                String(returnRequest.delivery_agent_id) !== String(req.user._id)
+            ) {
+                return res.status(403).json({
+                    status: 403,
+                    message: "Only the assigned delivery agent can pick up this return",
+                });
+            }
+
+            returnRequest.status = "picked_up";
+            returnRequest.pickup_date = new Date();
+        }
+
+        // ── received (delivery agent action + QC) ──
+        if (status === "received") {
+            if (!qc_status || !["passed", "failed"].includes(qc_status)) {
+                return res.status(400).json({
+                    status: 400,
+                    message: "qc_status is required (passed or failed) when marking as received",
+                });
+            }
+
+            if (
+                !returnRequest.delivery_agent_id ||
+                String(returnRequest.delivery_agent_id) !== String(req.user._id)
+            ) {
+                return res.status(403).json({
+                    status: 403,
+                    message: "Only the assigned delivery agent can receive this return",
+                });
+            }
+
+            returnRequest.status = "received";
+            returnRequest.received_date = new Date();
+            returnRequest.quality_check_status = qc_status;
+
+            if (quality_check_description) {
+                returnRequest.quality_check_description = quality_check_description;
+            }
+
+            if (qc_status === "passed") {
+                const order = await findOrderForReturn(returnRequest);
+                if (!order) {
+                    return res.status(404).json({ status: 404, message: "Related order not found" });
+                }
+
+                const item = order.items.find(
+                    (it) => String(it.product_id) === String(returnRequest.product_id)
+                );
+                if (!item) {
+                    return res.status(404).json({
+                        status: 404,
+                        message: "Product not found in original order",
+                    });
+                }
+
+                const units = parseFloat(returnRequest.unit) || 0;
+                returnRequest.refund_amount = +(item.unit_price * units).toFixed(2);
+                returnRequest.refund_status = "processed";
+            } else {
+                returnRequest.refund_amount = 0;
+                returnRequest.refund_status = "pending";
             }
         }
 

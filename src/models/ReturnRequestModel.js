@@ -30,21 +30,25 @@ const returnRequestSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["requested", "approved", "rejected"],
+      enum: ["requested", "approved", "rejected" ,"picked_up", "received"],
       default: "requested",
     },
-    recevied_date: {
+    quality_check_status: {
+      type: String,
+      enum: ["pending", "passed", "failed"],
+      default: "pending",
+    },
+    quality_check_description: {
+      type: String,
+      required: [false, "Quality check report is required"],
+    },
+    received_date: {
       type: Date,
       required: [false, "Received date is required"],
     },
     pickup_date: {
       type: Date,
       required: [false, "Pickup date is required"],
-    },
-    qc_status: {
-      type: String,
-      enum: ["pending", "passed", "failed"],
-      default: "pending",
     },
     refund_amount: {
       type: Number,
