@@ -71,7 +71,8 @@ const getReturnRequestsForDistributor = async (req, res) => {
 
         const [returnRequests, total] = await Promise.all([
             ReturnRequest.find(filter)
-                .populate('product_id')
+                .populate('product_id', 'product_name product_code')
+                .populate('order_id', 'order_number vendor_name vendor_mobile delivery_address')
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit),
@@ -113,7 +114,8 @@ const getReturnRequestsForSalesperson = async (req, res) => {
 
         const [returnRequests, total] = await Promise.all([
             ReturnRequest.find(filter)
-                .populate('product_id')
+                .populate('product_id', 'product_name product_code')
+                .populate('order_id', 'order_number vendor_name vendor_mobile delivery_address')
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit),
@@ -196,7 +198,7 @@ const updateReturnRequestStatus = async (req, res) => {
         // Define allowed transitions
         const allowedTransitions = {
             requested: ["approved", "rejected"],
-            approved: ["picked_up"],
+            approved: ["picked_up", "received"],
             picked_up: ["received"],
         };
 
@@ -242,55 +244,53 @@ const updateReturnRequestStatus = async (req, res) => {
             returnRequest.pickup_date = new Date();
         }
 
-        // ── received (delivery agent action + QC) ──
+        // ── received (delivery agent or distributor action + optional QC) ──
         if (status === "received") {
-            if (!qc_status || !["passed", "failed"].includes(qc_status)) {
-                return res.status(400).json({
-                    status: 400,
-                    message: "qc_status is required (passed or failed) when marking as received",
-                });
-            }
+            const isDistributorUser = req.user.role && req.user.role.toLowerCase() === 'distributor';
+            const isAssignedAgent = returnRequest.delivery_agent_id &&
+                String(returnRequest.delivery_agent_id) === String(req.user._id);
 
-            if (
-                !returnRequest.delivery_agent_id ||
-                String(returnRequest.delivery_agent_id) !== String(req.user._id)
-            ) {
+            if (!isDistributorUser && !isAssignedAgent) {
                 return res.status(403).json({
                     status: 403,
-                    message: "Only the assigned delivery agent can receive this return",
+                    message: "Only the assigned delivery agent or distributor can receive this return",
                 });
             }
 
             returnRequest.status = "received";
             returnRequest.received_date = new Date();
-            returnRequest.quality_check_status = qc_status;
 
-            if (quality_check_description) {
-                returnRequest.quality_check_description = quality_check_description;
-            }
+            if (qc_status && ["passed", "failed"].includes(qc_status)) {
+                returnRequest.quality_check_status = qc_status;
+                returnRequest.qc_status = qc_status;
 
-            if (qc_status === "passed") {
-                const order = await findOrderForReturn(returnRequest);
-                if (!order) {
-                    return res.status(404).json({ status: 404, message: "Related order not found" });
+                if (quality_check_description) {
+                    returnRequest.quality_check_description = quality_check_description;
                 }
 
-                const item = order.items.find(
-                    (it) => String(it.product_id) === String(returnRequest.product_id)
-                );
-                if (!item) {
-                    return res.status(404).json({
-                        status: 404,
-                        message: "Product not found in original order",
-                    });
-                }
+                if (qc_status === "passed") {
+                    const order = await findOrderForReturn(returnRequest);
+                    if (!order) {
+                        return res.status(404).json({ status: 404, message: "Related order not found" });
+                    }
 
-                const units = parseFloat(returnRequest.unit) || 0;
-                returnRequest.refund_amount = +(item.unit_price * units).toFixed(2);
-                returnRequest.refund_status = "processed";
-            } else {
-                returnRequest.refund_amount = 0;
-                returnRequest.refund_status = "pending";
+                    const item = order.items.find(
+                        (it) => String(it.product_id) === String(returnRequest.product_id)
+                    );
+                    if (!item) {
+                        return res.status(404).json({
+                            status: 404,
+                            message: "Product not found in original order",
+                        });
+                    }
+
+                    const units = parseFloat(returnRequest.unit) || 0;
+                    returnRequest.refund_amount = +(item.unit_price * units).toFixed(2);
+                    returnRequest.refund_status = "processed";
+                } else {
+                    returnRequest.refund_amount = 0;
+                    returnRequest.refund_status = "pending";
+                }
             }
         }
 
@@ -320,7 +320,7 @@ const findOrderForReturn = async (returnRequest) => {
 const receiveReturnedProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        const { qc_status } = req.body;
+        const { qc_status, quality_check_description } = req.body;
 
         if (!qc_status || !["passed", "failed"].includes(qc_status)) {
             return res.status(400).json({
@@ -334,18 +334,19 @@ const receiveReturnedProduct = async (req, res) => {
             return res.status(404).json({ status: 404, message: "Return request not found" });
         }
 
-        if (returnRequest.status !== "approved") {
+        if (!["approved", "received"].includes(returnRequest.status)) {
             return res.status(400).json({
                 status: 400,
-                message: "Return request must be approved before receiving",
+                message: "Return request must be approved or received before QC",
             });
         }
 
-        // Only the assigned delivery agent can receive
-        if (
-            !returnRequest.delivery_agent_id ||
-            String(returnRequest.delivery_agent_id) !== String(req.user._id)
-        ) {
+        // Allow assigned delivery agent or distributor
+        const isDistributorUser = req.user.role && req.user.role.toLowerCase() === 'distributor';
+        const isAssignedAgent = returnRequest.delivery_agent_id &&
+            String(returnRequest.delivery_agent_id) === String(req.user._id);
+
+        if (!isDistributorUser && !isAssignedAgent) {
             return res.status(403).json({
                 status: 403,
                 message: "Not authorized to receive this return",
@@ -354,6 +355,10 @@ const receiveReturnedProduct = async (req, res) => {
 
         returnRequest.recevied_date = new Date();
         returnRequest.qc_status = qc_status;
+
+        if (quality_check_description) {
+            returnRequest.quality_check_description = quality_check_description;
+        }
 
         if (qc_status === "passed") {
             const order = await findOrderForReturn(returnRequest);
