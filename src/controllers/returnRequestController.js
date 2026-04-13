@@ -240,7 +240,9 @@ const updateReturnRequestStatus = async (req, res) => {
 
         // ── received (delivery agent or distributor action + optional QC) ──
         if (status === "received") {
-            const isDistributorUser = req.user.role && req.user.role.toLowerCase() === 'distributor';
+            const populatedUser = await User.findById(req.user._id).populate('role_id');
+            const roleName = (populatedUser && populatedUser.role_id && populatedUser.role_id.role_name) || '';
+            const isDistributorUser = roleName.toLowerCase() === 'distributor';
             const isAssignedAgent = returnRequest.delivery_agent_id &&
                 String(returnRequest.delivery_agent_id) === String(req.user._id);
 
@@ -336,7 +338,9 @@ const receiveReturnedProduct = async (req, res) => {
         }
 
         // Allow assigned delivery agent or distributor
-        const isDistributorUser = req.user.role && req.user.role.toLowerCase() === 'distributor';
+        const populatedUser = await User.findById(req.user._id).populate('role_id');
+        const roleName = (populatedUser && populatedUser.role_id && populatedUser.role_id.role_name) || '';
+        const isDistributorUser = roleName.toLowerCase() === 'distributor';
         const isAssignedAgent = returnRequest.delivery_agent_id &&
             String(returnRequest.delivery_agent_id) === String(req.user._id);
 
