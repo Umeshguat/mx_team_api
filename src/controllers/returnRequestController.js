@@ -146,19 +146,13 @@ const getReturnRequestById = async (req, res) => {
 
         const returnRequest = await ReturnRequest.findById(id)
             .populate('product_id', 'product_name product_code')
-                .populate('order_id', 'order_number vendor_name vendor_mobile, delivery_address');
+                .populate('order_id', 'order_number vendor_name vendor_mobile delivery_address');
 
         if (!returnRequest) {
             return res.status(404).json({ status: 404, message: "Return request not found" });
         }
 
         const data = returnRequest.toObject();
-
-        // Remove all ID fields
-        delete data._id;
-        delete data.sales_person_id;
-        delete data.product_id?._id;
-        delete data.delivery_agent_id?._id;
 
         res.status(200).json({
             status: 200,
@@ -463,7 +457,7 @@ const getReturnRequestsForDeliveryPerson = async (req, res) => {
         const [returnRequests, total] = await Promise.all([
             ReturnRequest.find(filter)
                 .populate('product_id', 'product_name product_code')
-                .populate('order_id', 'order_number vendor_name vendor_mobile, delivery_address')
+                .populate('order_id', 'order_number vendor_name vendor_mobile delivery_address')
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit),
@@ -494,7 +488,7 @@ const getPickupByID = async (req, res) => {
             delivery_agent_id: req.user._id,
         })
             .populate('product_id', 'product_name product_code')
-            .populate('order_id', 'order_number vendor_name vendor_mobile, delivery_address');
+            .populate('order_id', 'order_number vendor_name vendor_mobile delivery_address');
         if (!returnRequest) {
             return res.status(404).json({ status: 404, message: "Pickup not found" });
         }
