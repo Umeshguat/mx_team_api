@@ -399,6 +399,16 @@ const completeRefund = async (req, res) => {
     try {
         const { id } = req.params;
 
+        // Authorize: only Distributor role can complete refunds
+        const authUser = await User.findById(req.user._id).populate("role_id");
+        const roleName = authUser && authUser.role_id ? authUser.role_id.role_name : null;
+        if (roleName !== "Distributor") {
+            return res.status(403).json({
+                status: 403,
+                message: "Access denied, distributor only",
+            });
+        }
+
         const returnRequest = await ReturnRequest.findById(id);
         if (!returnRequest) {
             return res.status(404).json({ status: 404, message: "Return request not found" });
