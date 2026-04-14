@@ -352,7 +352,7 @@ const receiveReturnedProduct = async (req, res) => {
         }
 
         returnRequest.recevied_date = new Date();
-        returnRequest.qc_status = qc_status;
+        returnRequest.quality_check_status = qc_status;
 
         if (quality_check_description) {
             returnRequest.quality_check_description = quality_check_description;
