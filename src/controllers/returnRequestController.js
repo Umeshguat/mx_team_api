@@ -426,8 +426,9 @@ const completeRefund = async (req, res) => {
             return res.status(404).json({ status: 404, message: "Related order not found" });
         }
 
-        // Authorize: only the distributor who owns the order
-        if (String(order.created_by) !== String(req.user._id)) {
+        // Authorize: distributor must own the salesperson who created the order
+        const salesperson = await User.findById(order.created_by);
+        if (!salesperson || String(salesperson.distributor_id) !== String(req.user._id)) {
             return res.status(403).json({
                 status: 403,
                 message: "Not authorized to complete this refund",
