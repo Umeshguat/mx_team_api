@@ -16,7 +16,7 @@ router.get("/pickup/:id", getPickupByID);
 router.get("/:id", getReturnRequestById);
 router.put("/:id/status", updateReturnRequestStatus);
 router.put("/:id/receive", receiveReturnedProduct);
-router.put("/:id/complete-refund", completeRefund);
+router.get("/:id/complete-refund", completeRefund);
 router.post("/", createReturnRequest);
 
 module.exports = router;
