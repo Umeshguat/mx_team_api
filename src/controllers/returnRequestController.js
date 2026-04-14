@@ -258,7 +258,7 @@ const updateReturnRequestStatus = async (req, res) => {
 
             if (qc_status && ["passed", "failed"].includes(qc_status)) {
                 returnRequest.quality_check_status = qc_status;
-                returnRequest.qc_status = qc_status;
+
 
                 if (quality_check_description) {
                     returnRequest.quality_check_description = quality_check_description;
