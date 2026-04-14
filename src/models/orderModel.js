@@ -48,6 +48,11 @@ const orderSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    shop_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ShopMaster",
+      required: [true, "Shop ID is required"],
+    },
     vendor_name: {
       type: String,
       required: [true, "Vendor name is required"],

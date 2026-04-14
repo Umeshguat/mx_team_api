@@ -103,8 +103,33 @@ const createOrder = async (req, res) => {
       assignedUser = await findUserByCity(delivery_address.city);
     }
 
+    // Find or create shop in ShopMaster to get shop_id
+    let shopId = null;
+    if (delivery_address && delivery_address.shop_name && delivery_address.shop_mobile) {
+      const existingShop = await ShopMaster.findOne({
+        shop_mobile: delivery_address.shop_mobile,
+      });
+      if (existingShop) {
+        shopId = existingShop._id;
+      } else {
+        const newShop = await ShopMaster.create({
+          distributor_id: req.user._id,
+          shop_name: delivery_address.shop_name,
+          shop_mobile: delivery_address.shop_mobile,
+          shop_address: delivery_address.address || "",
+          state: delivery_address.state || "",
+          city: delivery_address.city || "",
+          pincode: delivery_address.pincode || "",
+          latitude: delivery_address.location?.coordinates?.[1] || 0,
+          longitude: delivery_address.location?.coordinates?.[0] || 0,
+        });
+        shopId = newShop._id;
+      }
+    }
+
     const order = await Order.create({
       order_number,
+      shop_id: shopId,
       vendor_name,
       vendor_mobile,
       vendor_address: vendor_address || "",
@@ -128,26 +153,6 @@ const createOrder = async (req, res) => {
         vendor_mobile: order.vendor_mobile,
         delivery_address: delivery_address || {},
       });
-    }
-
-    // Save shop detail in ShopMaster if delivery_address has shop info
-    if (delivery_address && delivery_address.shop_name && delivery_address.shop_mobile) {
-      const existingShop = await ShopMaster.findOne({
-        shop_mobile: delivery_address.shop_mobile,
-      });
-      if (!existingShop) {
-        await ShopMaster.create({
-          distributor_id: req.user._id,
-          shop_name: delivery_address.shop_name,
-          shop_mobile: delivery_address.shop_mobile,
-          shop_address: delivery_address.address || "",
-          state: delivery_address.state || "",
-          city: delivery_address.city || "",
-          pincode: delivery_address.pincode || "",
-          latitude: delivery_address.location?.coordinates?.[1] || 0,
-          longitude: delivery_address.location?.coordinates?.[0] || 0,
-        });
-      }
     }
 
     // Deduct stock using FIFO for each item

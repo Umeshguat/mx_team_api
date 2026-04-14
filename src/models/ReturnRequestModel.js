@@ -14,6 +14,11 @@ const returnRequestSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "Sales person ID is required"],
     },
+    shop_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ShopMaster",
+      required: [true, "Shop ID is required"],
+    },
     product_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "InventoryProduct",
