@@ -37,10 +37,10 @@ const {
   deleteCategory,
 } = require("../controllers/categoryController");
 // All admin routes require authentication + admin role
+router.route("/roles").get(getRoles).post(createRole);
 router.use(protect, isAdmin);
 
 // Role routes
-router.route("/roles").get(getRoles).post(createRole);
 router.route("/roles/:id").get(getRoleById).put(updateRole).delete(deleteRole);
 
 // Designation routes
